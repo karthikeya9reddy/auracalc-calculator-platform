@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#050508">
+  <meta name="description" content="AuraCalc is a traceable calculation workspace. Find a tool, check its method and sources, and carry results into your next step.">
+  <meta property="og:title" content="AuraCalc — Calculate beautifully">
+  <meta property="og:description" content="A growing library of source-backed calculators for everyday questions and technical work.">
+  <meta property="og:type" content="website">
+  <title>AuraCalc — Calculate beautifully</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <link rel="stylesheet" href="/app.css">
+  <link rel="stylesheet" href="/lenis.css">
+  <link rel="stylesheet" href="/aura-theme.css">
+  <script type="module" src="/scroll.mjs"></script>
+  <script type="module" src="/app.mjs"></script>
+  <script type="module" src="/home-app.mjs"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="site-shell">
+    <div class="noise" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="AuraCalc home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 34 34"><path d="M7 4h20v5H12v5h11v5H12v5h15v5H7V4Z" /></svg></span>
+        <span>AURACALC</span>
+      </a>
+      <nav class="nav-links" id="main-navigation" aria-label="Main navigation">
+        <a href="#explore">Tools</a>
+        <a href="#fields">Fields</a>
+        <a href="#workflow">How it works</a>
+      </nav>
+      <div class="header-actions">
+        <label class="sr-only" for="localeSelect">Number format</label>
+        <select class="locale-picker" id="localeSelect" aria-label="Number format">
+          <option value="en-US">1,234.5 · US</option>
+          <option value="en-GB">1,234.5 · UK</option>
+          <option value="de-DE">1.234,5 · DE</option>
+          <option value="fr-FR">1 234,5 · FR</option>
+          <option value="hi-IN">1,234.5 · IN</option>
+        </select>
+        <button class="search-mini" id="focus-search" type="button" aria-label="Focus calculator search"><svg class="ui-icon" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="21" cy="21" r="12"/><path d="m30 30 10 10"/></svg><span>Search</span><kbd>/</kbd></button>
+        <button class="icon-action history-action" id="historyButton" type="button" aria-label="Open calculation history" title="History"><svg class="ui-icon" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 15a17 17 0 1 1-2 13M8 7v9h9M24 14v11l8 5"/></svg></button>
+        <button class="mobile-menu" id="mobile-menu-button" type="button" aria-expanded="false" aria-controls="main-navigation" aria-label="Open navigation menu"><svg class="ui-icon" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 12h34M7 24h34M7 36h34"/></svg></button>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-copy">
+          <p class="eyebrow">THE CALCULATOR UNIVERSE / BUILT TO GROW</p>
+          <h1 id="hero-title"><span class="line-mask"><span>Numbers,</span></span><span class="line-mask"><span>but make them <em>alive.</em></span></span></h1>
+          <p class="hero-description">Find a useful tool, see how the answer was made, and carry it into your next step. Every live calculator shows its method, units, sources, and limits.</p>
+          <a class="hero-cta" href="#explore"><span>Explore calculators</span><span class="cta-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span></a>
+          <p class="hero-footnote"><span class="live-indicator" aria-hidden="true"></span><span id="hero-catalog-status">Loading the live catalog…</span></p>
+        </div>
+        <div class="hero-orbit" aria-label="Live catalog summary">
+          <div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div>
+          <div class="orbit-core"><span class="orbit-glyph" aria-hidden="true">∑</span><span id="hero-tool-count">0</span><small>LIVE TOOLS</small></div>
+          <span class="orbit-number n-one" aria-hidden="true">01</span><span class="orbit-number n-two" aria-hidden="true">%</span><span class="orbit-number n-three" aria-hidden="true">∞</span>
+          <span class="orbit-note">48 FIELDS MAPPED</span>
+        </div>
+        <div class="hero-scroll" aria-hidden="true"><span>Scroll to explore</span><span class="scroll-line"></span></div>
+      </section>
+
+      <div class="marquee" aria-label="AuraCalc principles"><div>CALCULATE WITH INTENT <i>✳</i> SHOW THE METHOD <i>✳</i> KEEP MOVING FORWARD <i>✳</i>&nbsp;</div><div aria-hidden="true">CALCULATE WITH INTENT <i>✳</i> SHOW THE METHOD <i>✳</i> KEEP MOVING FORWARD <i>✳</i>&nbsp;</div></div>
+
+      <section class="catalog-section" id="explore" aria-labelledby="catalog-title" data-scroll-reveal>
+        <div class="section-intro">
+          <div><p class="eyebrow">THE INDEX / <span id="catalog-live-label">LIVE CATALOG</span></p><h2 id="catalog-title">Start with<br><span>something useful.</span></h2></div>
+          <p class="section-note">A growing library. A clear method.<br>Room for your next calculation.</p>
+        </div>
+        <form class="search-bar-wrap" id="calculatorSearchForm" role="search">
+          <svg class="ui-icon" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="21" cy="21" r="12"/><path d="m30 30 10 10"/></svg><label class="sr-only" for="catalog-search">Search calculators and fields</label>
+          <input id="catalog-search" type="search" autocomplete="off" placeholder="What are you trying to figure out?" aria-describedby="search-description">
+          <span class="search-count" id="search-count" aria-live="polite">Search all tools</span>
+          <button type="button" class="clear-search" id="clear-search" aria-label="Clear search" hidden><svg class="ui-icon" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m12 12 24 24M36 12 12 36"/></svg></button>
+        </form>
+        <p class="search-description" id="search-description">Search by task, subject, formula, or everyday wording. Press / to jump to search.</p>
+        <div class="catalog-controls">
+          <div class="category-row" id="categoryFilters" role="group" aria-label="Filter calculators by subject"></div>
+          <button class="favorite-filter" id="favorites-filter" type="button" aria-pressed="false"><svg class="ui-icon" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M24 40S7 30 7 18a9 9 0 0 1 17-4 9 9 0 0 1 17 4c0 12-17 22-17 22Z"/></svg> Saved tools</button>
+        </div>
+        <div class="catalog-grid" id="auraCalculatorGrid" aria-live="polite"></div>
+        <div class="catalog-pagination" id="catalog-pagination" hidden>
+          <p id="catalog-page-status" aria-live="polite"></p>
+          <button class="button button-quiet" id="catalog-load-more" type="button" aria-controls="auraCalculatorGrid">Show more tools</button>
+        </div>
+        <div class="empty-state" id="empty-state" hidden><span aria-hidden="true">✳</span><p>No live calculator matches that search yet.</p><button class="text-button" id="reset-search" type="button">Clear filters</button></div>
+        <p class="catalog-truth"><span class="status-dot"></span><span id="catalog-truth-text">Only released tools are counted as live. The wider directory shows research fields awaiting calculator-specific review.</span></p>
+      </section>
+
+      <section class="field-section" id="fields" aria-labelledby="fields-title" data-scroll-reveal>
+        <div class="section-intro field-intro"><div><p class="eyebrow">THE FIELD MAP / RESEARCH SCOPE</p><h2 id="fields-title">48 fields.<br><span>One careful method.</span></h2></div><p class="section-note">A field appears in the live catalog as its tools pass source, verification, and risk review.</p></div>
+        <div class="field-toolbar"><p id="field-status" aria-live="polite">Showing highlighted fields.</p><button class="text-button" type="button" id="toggle-fields" aria-expanded="false">View all 48 fields <span aria-hidden="true">↓</span></button></div>
+        <div class="field-grid" id="field-grid"></div>
+        <div class="field-note"><span aria-hidden="true">i</span><div><strong>Mapped does not mean covered.</strong><p>Medicine, mining, civil and mechanical engineering, software, hardware, AI, chemistry, physics, VFX/CGI, business, and everyday use are in the research map. Specialized and consequential calculations need appropriate evidence and review before release.</p></div></div>
+      </section>
+
+      <section class="workflow-section" id="workflow" aria-labelledby="workflow-title" data-scroll-reveal>
+        <div class="workflow-copy"><p class="eyebrow">ONE ANSWER CAN START THE NEXT STEP</p><h2 id="workflow-title">Keep the whole task<br><span>in one workspace.</span></h2><p>Use a compatible result in a related calculator. Values stay editable, and the source method version travels with them.</p><a class="workflow-link" href="/calculators/rectangle-area/">See the area to volume workflow <span aria-hidden="true">↗</span></a></div>
+        <div class="workflow-board" aria-label="A three-step geometry workflow">
+          <div class="workflow-step"><span>01</span><div><strong>Enter dimensions</strong><small>Length · width · units</small></div></div>
+          <div class="workflow-line" aria-hidden="true"></div>
+          <div class="workflow-step"><span>02</span><div><strong>Calculate area</strong><small>Method and units recorded</small></div></div>
+          <div class="workflow-line" aria-hidden="true"></div>
+          <div class="workflow-step"><span>03</span><div><strong>Continue to volume</strong><small>Carry area · add depth</small></div></div>
+          <p class="workflow-caption"><span aria-hidden="true">✓</span> Compatible dimensions connect. Incompatible quantities are blocked.</p>
+        </div>
+      </section>
+
+      <section class="manifesto" id="about" aria-labelledby="about-title" data-scroll-reveal><div class="manifesto-orb" aria-hidden="true"></div><p class="eyebrow">WHY AURACALC</p><h2 id="about-title">Because the fastest way<br>to clarity is <span>a checkable answer.</span></h2><p class="manifesto-copy">AuraCalc is designed to grow across everyday and specialist work without hiding how a result was made. A calculator earns its place through clear inputs, source traceability, useful explanations, and honest limits.</p><div class="manifesto-points"><span><b>01</b> Units before answers</span><span><b>02</b> Methods users can inspect</span><span><b>03</b> Results that continue into a workflow</span></div></section>
+
+      <section class="feedback-section" id="feedback" aria-labelledby="feedback-title" data-scroll-reveal><div><p class="eyebrow">HELP SHAPE THE LIBRARY</p><h2 id="feedback-title">What should we build next?</h2><p>Suggest a missing tool, report a confusing step, or flag a possible issue. This preview saves feedback on your device; it does not send it to the team.</p></div><form class="feedback-form" id="feedbackForm"><label for="feedbackType">Feedback type</label><select id="feedbackType" required><option value="idea">Suggest a tool or field</option><option value="usability">Something was confusing</option><option value="calculation">Possible calculation issue</option><option value="accessibility">Accessibility issue</option></select><label for="feedbackMessage">Your feedback</label><textarea id="feedbackMessage" rows="3" maxlength="1200" required placeholder="Tell us what you were trying to do…"></textarea><div class="feedback-actions"><button class="button button-primary" type="submit">Save feedback</button><button class="button button-quiet" id="exportFeedback" type="button">Export feedback</button></div><p class="form-status" id="feedbackStatus" role="status"></p></form></section>
+    </main>
+
+    <footer class="site-footer"><a class="brand" href="#top" aria-label="AuraCalc home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 34 34"><path d="M7 4h20v5H12v5h11v5H12v5h15v5H7V4Z" /></svg></span><span>AURACALC</span></a><span>FORMULAS WITH SOURCES</span><span>BUILT FOR THE CURIOUS</span><small>Early public-site foundation · Tools should be used within their documented scope.</small></footer>
+  </div>
+
+  <dialog class="tool-dialog" id="tool-dialog" aria-labelledby="tool-title" data-lenis-prevent><div class="calc-modal"><button class="modal-close" id="close-tool-dialog" type="button" aria-label="Close calculator">×</button><div class="modal-symbol accent-lime" id="tool-symbol" aria-hidden="true">∑</div><p class="eyebrow" id="tool-eyebrow">CALCULATOR</p><h2 id="tool-title">Calculator</h2><p class="modal-copy" id="tool-description"></p><form id="tool-form" class="tool-form"><div class="input-grid" id="tool-inputs"></div><button class="run-button" type="submit">Calculate <span aria-hidden="true">↗</span></button></form><p class="calculation-error" id="tool-error" role="alert" hidden></p><section class="tool-result" id="tool-result" aria-live="polite" hidden></section><div class="tool-sources" id="tool-sources" hidden></div></div></dialog>
+
+  <dialog class="app-dialog" id="historyDialog" aria-labelledby="historyTitle" data-lenis-prevent><div class="dialog-heading"><div><span class="eyebrow">SAVED ON THIS DEVICE</span><h2 id="historyTitle">Calculation history</h2></div><button class="icon-action" type="button" data-close-dialog aria-label="Close history">×</button></div><p class="dialog-description">History stays in this browser profile. Avoid saving sensitive information on a shared device.</p><label class="history-setting"><input id="historyEnabled" type="checkbox"><span><strong>Save successful calculations</strong><small>Turn this off to pause future saves. Existing entries remain until deleted.</small></span></label><div class="history-list" id="historyList"></div><div class="dialog-actions"><button class="button button-danger" id="clearHistory" type="button">Clear history</button><button class="button button-primary" type="button" data-close-dialog>Done</button></div></dialog>
+  <dialog class="app-dialog" id="historyRecordDialog" aria-labelledby="historyRecordTitle" data-lenis-prevent><div class="dialog-heading"><div><span class="eyebrow">ORIGINAL SAVED RESULT</span><h2 id="historyRecordTitle">Calculation</h2></div><button class="icon-action" type="button" data-close-dialog aria-label="Close saved result">×</button></div><div id="historyRecordContent"></div><div class="dialog-actions"><button class="button button-quiet" id="restoreHistoryInputs" type="button">Restore inputs</button><button class="button button-primary" type="button" data-close-dialog>Done</button></div></dialog>
+  <dialog class="app-dialog small-dialog" id="noticeDialog" aria-labelledby="noticeTitle" data-lenis-prevent><div class="dialog-heading"><h2 id="noticeTitle">AuraCalc note</h2><button class="icon-action" type="button" data-close-dialog aria-label="Close">×</button></div><p id="noticeText"></p><div class="dialog-actions"><button class="button button-primary" type="button" data-close-dialog>Got it</button></div></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

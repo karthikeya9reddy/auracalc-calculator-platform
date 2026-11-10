@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f5f2">
+  <title>Measure → Understand → Plan | Calculator Platform Prototype</title>
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="history.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Fieldwork home"><span class="brand-mark">f.</span><span>fieldwork<span class="brand-dot">.</span></span></a>
+    <nav aria-label="Main navigation"><a href="#workspace">Workspace</a><a href="#measure">Camera measure</a><a href="#learn">How it works</a></nav>
+    <div class="header-actions"><button class="quiet-button" id="historyButton" type="button">History <span class="history-count" id="historyCount">0</span></button><button class="quiet-button" id="privacyButton" type="button">Privacy-first <span class="shield">✳</span></button></div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="eyebrow-dot"></span> A more useful kind of calculator</div>
+        <h1>Start with what<br>you’re trying to do.</h1>
+        <p class="hero-text">Describe the task, measure what you can, then follow the steps to an answer you can understand and check.</p>
+        <div class="task-box">
+          <label for="taskInput">What are you trying to figure out?</label>
+          <div class="task-entry"><input id="taskInput" type="text" placeholder="e.g. I want to measure this and plan what comes next" autocomplete="off"><button id="askButton" type="button" class="round-arrow" aria-label="Find a helpful path">↗</button></div>
+          <div class="suggestions"><button type="button" data-prompt="I want to measure something in front of me">Measure something</button><button type="button" data-prompt="I need to plan a multi-step task">Plan a sequence</button><button type="button" data-prompt="I want to compare two scenarios">Compare options</button></div>
+        </div>
+        <div class="assistant-response" id="assistantResponse" aria-live="polite"><span class="sparkle">✳</span><span>Tell me your goal and I’ll suggest a starting point. You’ll review the steps before using them.</span></div>
+      </div>
+      <div class="hero-art" aria-label="Illustration of a camera-guided measurement becoming a connected plan">
+        <div class="art-glow"></div><div class="art-grid"></div>
+        <div class="art-tag tag-camera"><span>◎</span> CAMERA INPUT</div>
+        <div class="measure-card"><div class="measure-card-top"><span>LIVE MEASUREMENT</span><span class="live-pulse"></span></div><div class="measure-visual"><div class="measure-object"></div><div class="measure-line"><i></i><i></i><b>●</b></div><span class="measure-label">confirm points</span></div><div class="measure-card-foot"><span>Scale source</span><strong>Needs your reference</strong></div></div>
+        <div class="flow-line"></div><div class="workflow-card"><div class="workflow-head"><span class="workflow-icon">↗</span><span>YOUR WORKFLOW</span></div><div class="flow-step"><i class="step-done">✓</i><span>Measure</span><small>you confirm</small></div><div class="flow-step"><i>02</i><span>Choose next step</span><small>guided</small></div><div class="flow-step"><i>03</i><span>Review the result</span><small>sources shown</small></div></div>
+        <div class="art-tag tag-check"><span>✓</span> YOU STAY IN CONTROL</div>
+      </div>
+    </section>
+
+    <section class="quick-strip" aria-label="Platform principles"><div><span>01</span> A useful path, not a dead end</div><div><span>02</span> Your inputs stay yours</div><div><span>03</span> Show the working</div><div><span>04</span> Visual when it helps</div></section>
+
+    <section class="workspace-section" id="workspace">
+      <div class="section-heading"><div><div class="eyebrow">FROM ONE ANSWER TO A COMPLETE TASK</div><h2>Your work, connected.</h2></div><p>Carry confirmed information forward, compare possibilities, and keep the reasoning together.</p></div>
+      <div class="workspace-grid">
+        <article class="panel workflow-panel">
+          <div class="panel-heading"><div><span class="panel-kicker">GUIDED WORKSPACE</span><h3>A clear path, one step at a time</h3></div><button class="icon-button" id="resetWorkflow" title="Reset workflow" aria-label="Reset workflow">↺</button></div>
+          <div class="progress-track"><span id="progressBar"></span></div><div class="progress-meta"><span id="stepProgress">STEP 1 OF 3</span><span>Inputs stay in this session</span></div>
+          <div class="step-content" id="stepContent"></div>
+          <div class="step-actions"><button class="text-button" id="backStep" type="button">← Back</button><button class="primary-button" id="nextStep" type="button">Continue <span>→</span></button></div>
+          <div class="workflow-note"><span>ⓘ</span><span>Each step can be reviewed or changed. The final summary will show how the steps connect.</span></div>
+        </article>
+
+        <article class="panel scenario-panel">
+          <div class="panel-heading"><div><span class="panel-kicker">SCENARIO EXPLORER</span><h3>See what changes</h3></div><span class="pill illustrative">Illustrative model</span></div>
+          <p class="panel-intro">Adjust a general input to compare two possibilities. This example demonstrates the interaction, not a real field calculation.</p>
+          <div class="scenario-input"><div><label for="scenarioRange">Scenario change</label><span>Move the control to explore</span></div><output id="scenarioChange">+20%</output></div>
+          <input class="range" id="scenarioRange" type="range" min="-40" max="60" value="20" aria-label="Scenario change percentage">
+          <div class="chart-wrap"><div class="chart-y-label">RELATIVE OUTCOME</div><svg class="scenario-chart" viewBox="0 0 480 180" role="img" aria-labelledby="chartTitle chartDesc"><title id="chartTitle">Illustrative scenario comparison</title><desc id="chartDesc">A baseline and a scenario outcome change as the control is adjusted.</desc><defs><linearGradient id="fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#b6dfd2" stop-opacity=".5"/><stop offset="1" stop-color="#b6dfd2" stop-opacity="0"/></linearGradient></defs><path class="chart-fill" d="M38 140 C90 130 102 100 150 112 S220 91 270 91 S340 50 390 61 S435 35 465 28 L465 160 L38 160Z"/><path class="chart-line" d="M38 140 C90 130 102 100 150 112 S220 91 270 91 S340 50 390 61 S435 35 465 28"/><line class="chart-baseline" x1="38" y1="98" x2="465" y2="98"/><line id="scenarioMarker" class="chart-marker" x1="310" y1="28" x2="310" y2="160"/><circle id="scenarioDot" class="chart-dot" cx="310" cy="78" r="7"/><text x="38" y="176">BASELINE</text><text id="chartScenarioLabel" x="390" y="176">SCENARIO</text></svg></div>
+          <div class="scenario-results"><div><span>Baseline index</span><strong>100</strong></div><div class="result-arrow">→</div><div><span>Scenario index</span><strong id="scenarioValue">120</strong></div></div>
+          <div class="scenario-history-action"><button type="button" class="secondary-button" id="saveScenario">Save this example</button><span id="scenarioHistoryStatus" aria-live="polite">Saved runs stay on this device.</span></div>
+          <details class="assumption-details"><summary>What this example assumes</summary><p>A made-up relative model: outcome index = 100 + scenario change. Real workflows must provide a reviewed method and its own assumptions.</p></details>
+        </article>
+      </div>
+    </section>
+
+    <section class="camera-section" id="measure">
+      <div class="section-heading"><div><div class="eyebrow">CAMERA → MEASUREMENT → NEXT STEP</div><h2>Bring the real world into the calculation.</h2></div><p>Use a camera view to mark what matters. A known scale or supported depth sensing is needed for real-world dimensions.</p></div>
+      <div class="camera-layout">
+        <article class="camera-panel panel">
+          <div class="camera-toolbar"><div><span class="panel-kicker">MEASUREMENT STUDIO</span><strong id="cameraState">Ready when you are</strong></div><span class="pill" id="cameraMode">DEMO MODE</span></div>
+          <div class="camera-view" id="cameraView"><video id="cameraVideo" playsinline muted></video><div class="demo-scene" id="demoScene"><div class="demo-wall"></div><div class="demo-frame"></div><div class="demo-object"></div><span class="scene-hint">DEMO SCENE · SELECT TWO POINTS</span></div><svg id="measureOverlay" class="measure-overlay" aria-label="Measurement points and line"></svg><div class="camera-empty" id="cameraEmpty"><div class="camera-icon">◎</div><strong>See a measurement in context</strong><span>Start your camera or use the interactive demo scene.</span><button type="button" class="primary-button" id="startCamera">Open camera</button><button type="button" class="demo-button" id="useDemo">Try demo scene <span>→</span></button></div><div class="scan-status" id="scanStatus" aria-live="polite"></div></div>
+          <div class="camera-controls"><button type="button" class="secondary-button" id="calibrateButton">① Set known reference</button><button type="button" class="secondary-button" id="measureButton">② Mark measurement</button><button type="button" class="icon-button" id="clearMarks" aria-label="Clear measurement points" title="Clear points">⌫</button></div>
+          <div class="camera-readout"><div><span>Scale reference</span><strong id="scaleReadout">Not set</strong></div><div><span>Selected distance</span><strong id="distanceReadout">—</strong></div><div><span>Measurement quality</span><strong id="qualityReadout">Not assessed</strong></div></div>
+          <p class="history-save-note" id="cameraHistoryStatus" aria-live="polite"></p>
+          <div class="camera-consent"><span>⌑</span><span>Camera access starts only when you choose it. This prototype processes the view locally in your browser; it does not upload or save images.</span></div>
+        </article>
+        <aside class="camera-side">
+          <div class="side-card"><span class="side-icon">✳</span><h3>AI helps you aim</h3><p>A future assistant can suggest boundaries and explain what else is needed. You confirm every point and scale reference.</p><span class="status-note">DEMO: AI SERVICE NOT CONNECTED</span></div>
+          <div class="side-card"><span class="side-icon">⌁</span><h3>Confidence, not false precision</h3><p>Depth sensors and camera tracking vary by device, lighting, distance, and surface. We show when a measurement needs a better reference or a physical check.</p></div>
+          <div class="side-card next-card"><span class="side-icon">↗</span><h3>Use it in the next step</h3><p>Confirmed dimensions can move into a related workflow with their source and uncertainty attached.</p><button type="button" class="link-button" id="sendToWorkflow">Add measurement to workspace →</button></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="field-section">
+      <div class="section-heading"><div><div class="eyebrow">EXPLAIN IT AT THE RIGHT LEVEL</div><h2>For the person doing the work.</h2></div><p>Same reviewed method. Different explanation for the way you’re using it.</p></div>
+      <div class="field-grid"><div class="field-selector panel"><span class="panel-kicker">WHO ARE YOU WORKING AS?</span><div class="role-options" role="group" aria-label="Choose a guidance level"><button class="role-option active" data-role="learner" type="button">Learner</button><button class="role-option" data-role="professional" type="button">Professional</button><button class="role-option" data-role="everyday" type="button">Everyday</button></div><div class="role-card"><div class="role-icon" id="roleIcon">✎</div><h3 id="roleTitle">Build understanding as you go.</h3><p id="roleDescription">See what each input means, why a step is needed, and how the result connects to the idea.</p><div class="role-points" id="rolePoints"><span>✓ Guided definitions</span><span>✓ Expandable working</span><span>✓ Try a practice scenario</span></div></div></div>
+        <div class="evidence-panel panel"><div class="panel-heading"><div><span class="panel-kicker">RESULTS YOU CAN CHECK</span><h3>Show where the answer came from.</h3></div><span class="verified-badge">✓ TRACEABLE</span></div><div class="evidence-result"><div><span>Illustrative result</span><strong>Awaiting reviewed calculation</strong></div><span class="result-mark">↗</span></div><div class="evidence-rows"><div><span>Method</span><strong>Only shown after a method is reviewed</strong></div><div><span>Source</span><strong>Reference, section and edition</strong></div><div><span>Assumptions</span><strong>Visible before you rely on a result</strong></div><div><span>Review status</span><strong><i class="review-dot"></i> Publish gate required</strong></div></div><div class="evidence-footer"><span>Calculation output stays deterministic.</span><button class="text-button" type="button" id="provenanceButton">Why this matters ↗</button></div></div>
+      </div>
+    </section>
+
+    <section class="demo-section" id="learn">
+      <div class="section-heading"><div><div class="eyebrow">LEARN BY SEEING THE STEPS</div><h2>Short walkthroughs. Clear captions.</h2></div><p>Interactive demonstrations help people understand a workflow before they use it.</p></div>
+      <div class="demo-layout panel"><div class="demo-player"><div class="demo-screen" id="demoScreen"><div class="demo-screen-grid"></div><div class="demo-play-mark" id="demoPlayMark">▶</div><div class="demo-visual-step" id="demoVisualStep"><span class="demo-number">01</span><span>Describe the task</span></div><div class="demo-caption" id="demoCaption">First, tell us what you want to do. The guide suggests a reviewed path and explains why.</div></div><div class="player-controls"><button type="button" id="demoPlay" aria-label="Play walkthrough">▶</button><div class="player-progress"><span id="demoProgress"></span></div><span id="demoTime">1 / 3</span><button type="button" id="demoNext" aria-label="Next demonstration step">→</button></div></div><div class="demo-copy"><span class="panel-kicker">WORKSPACE WALKTHROUGH</span><h3>From a question to a result you can check</h3><p>This demo uses fictional inputs. It shows the experience, not a real calculator method.</p><div class="demo-step-list" id="demoStepList"><button class="demo-step active" data-demo-step="0"><span>01</span><span>Describe your task</span><i>●</i></button><button class="demo-step" data-demo-step="1"><span>02</span><span>Confirm inputs and steps</span><i>●</i></button><button class="demo-step" data-demo-step="2"><span>03</span><span>Review and export</span><i>●</i></button></div><details class="transcript"><summary>Read the full transcript</summary><ol><li>Describe what you want to figure out. The assistant suggests a matching workflow from reviewed options.</li><li>Confirm any information the workflow needs. You can edit earlier steps and see where each value comes from.</li><li>Review the result, assumptions, sources, and limitations. Export a traceable summary when ready.</li></ol></details></div></div>
+    </section>
+
+    <section class="closing"><div class="closing-orbit orbit-one"></div><div class="closing-orbit orbit-two"></div><span class="eyebrow">A BETTER WAY TO GET THERE</span><h2>Measure. Understand.<br>Then make your next move.</h2><p>One workspace for clear answers, useful visuals, and connected next steps.</p><a class="primary-button" href="#top">Try the prototype <span>↑</span></a></section>
+  </main>
+  <footer><a class="brand" href="#top"><span class="brand-mark">f.</span><span>fieldwork<span class="brand-dot">.</span></span></a><span>Concept prototype · Sample interactions only · No reviewed calculators included</span><button type="button" class="text-button" id="exportButton">Export demo summary ↓</button></footer>
+  <dialog id="noticeDialog" class="notice-dialog"><div class="dialog-top"><span class="brand-mark">f.</span><button type="button" id="closeDialog" aria-label="Close">×</button></div><h2 id="dialogTitle">A note about this prototype</h2><p id="dialogText">This is an interactive concept. The AI assistant uses local sample responses only. No live AI service, reviewed calculator methods, or device depth measurement is connected.</p><button type="button" class="primary-button" id="dialogOk">Got it</button></dialog>
+  <dialog id="historyDialog" class="history-dialog" aria-labelledby="historyTitle"><div class="history-dialog-head"><div><span class="panel-kicker">SAVED ON THIS DEVICE</span><h2 id="historyTitle">Calculation history</h2></div><button type="button" class="history-close" id="closeHistory" aria-label="Close calculation history">×</button></div><p class="history-intro">Review a saved answer or restore its inputs. Prototype entries are illustrative examples. Camera images are never saved. Anyone with access to this browser profile may be able to see these entries.</p><label class="history-preference"><input id="historyEnabled" type="checkbox"><span><strong>Save successful runs on this device</strong><small>Turn this off to pause new history. Existing entries remain until you delete them.</small></span></label><p id="historyStatus" class="history-status" aria-live="polite"></p><div id="historyList" class="history-list"></div><div class="history-dialog-footer"><button type="button" class="text-button" id="clearHistory">Clear all history</button><button type="button" class="primary-button" id="doneHistory">Done</button></div></dialog>
+  <script src="history-store.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
