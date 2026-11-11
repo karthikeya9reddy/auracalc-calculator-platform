@@ -610,6 +610,7 @@ function renderCalculatorPage(definition, runtime) {
 
   form.addEventListener('reset', () => {
     error.hidden = true;
+    currentCalculation = null;
     pendingHandoff = null;
     resultCard.replaceChildren(renderEmptyResult());
   });
@@ -630,11 +631,15 @@ function renderCalculatorPage(definition, runtime) {
       currentCalculation.workflowContext = workflowContext;
       renderCalculationResult(definition, result, rawInputs, resultCard, pendingHandoff, workflowContext);
     } catch (calculationError) {
+      currentCalculation = null;
       const message = calculationError instanceof CalculationError
         ? calculationError.message
         : 'This input could not be processed. Check the values and try again.';
       error.textContent = message;
       error.hidden = false;
+      error.tabIndex = -1;
+      error.focus({ preventScroll: true });
+      error.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
       resultCard.replaceChildren(renderEmptyResult('No result was produced. Fix the issue above and calculate again.'));
     }
   });

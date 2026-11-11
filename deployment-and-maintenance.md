@@ -12,7 +12,7 @@ npm run build
 npm run preview
 ```
 
-Open `http://127.0.0.1:4173` in a browser and manually review the home page, calculator pages, converter, history controls, feedback form, keyboard flow, and narrow-screen layout. The current environment could not complete this browser review, so a human browser/device check is still a release task. Stop the preview with `Ctrl+C`.
+Open `http://127.0.0.1:4173` in a browser and review the home page, calculator pages, converter, history controls, feedback form, keyboard flow, and narrow-screen layout. Selected desktop and narrow-screen browser checks have been completed locally; real mobile hardware, camera permissions, AR tracking and screen readers remain release checks. Stop the preview with `Ctrl+C`.
 
 ## Prepare a static deployment
 
@@ -43,7 +43,7 @@ The current starter calculators record developer self-review and automated/refer
 
 ## Monthly maintenance routine
 
-- Check whether referenced equations, standards, data sources, supported units, or software dependencies changed. These four starter methods use stable educational equations; immediately revisit them if a source correction, bug report, or scope change is found.
+- Check whether referenced equations, standards, data sources, supported units, or software dependencies changed. Immediately revisit affected methods when a source correction, bug report, or scope change is found.
 - Review feedback exports for suspected result issues and missing tools. Feedback currently stays on the user's device until the user exports it; the website owner does not receive submissions automatically.
 - Run the automated checks, build the bundle, review changed pages on desktop and mobile browsers, and confirm links, units, warnings, and result provenance.
 - Retain the current and prior release bundles, record the changed calculator versions, and verify that a rollback copy is usable.
@@ -52,4 +52,6 @@ The current starter calculators record developer self-review and automated/refer
 
 ## Not yet ready for public launch
 
-The website can build a static bundle, but it has not passed browser/device, screen-reader, accessibility, security, load, or production-host verification. It has no server-side feedback collection, AI service, camera measurement, synchronized history, authentication, analytics, or advertising network. There is no evidence for any traffic capacity or production service level. Finish those reviews and decisions before describing the platform as production-ready.
+The website builds a static bundle and has local browser checks. Photo measurement and supported-device AR are implemented as estimates; the optional photo AI endpoint is local-only. A public authenticated AI backend, cost limits and privacy arrangements are not deployed. Physical-device accuracy, screen-reader, security, load and production-host verification remain outstanding. Feedback stays on the user's device, and there is no synchronized history or connected advertising network. Do not claim an established production service level or million-user capacity.
+
+The bundle includes a `_headers` file for hosts that support it. On other hosts, configure equivalent content-type, referrer and permission restrictions. The camera, location and XR permissions are limited to the same origin; microphone access is disabled. Verify these settings after deployment, and validate a content security policy against the selected host and providers before enforcing it.

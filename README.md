@@ -49,10 +49,10 @@ The checks use Node’s built-in test runner. Lenis is bundled locally for smoot
 ## What works in this stage
 
 - AuraCalc's Emergent-inspired dark visual system with eased Lenis wheel scrolling, reduced-motion-aware reveals, pointer-responsive card tilt, animated hero, search-first catalog, favorites, and responsive navigation
-- A catalog of 301 published formula calculators, 3,038 separately counted unit-conversion pages, and a currency converter
+- A catalog of 303 published formula calculators, 3,038 separately counted unit-conversion pages, and a currency converter
 - Unit conversion across the current curated physical-unit registry, with dimensional and temperature-role checks
 - A currency converter using dated Frankfurter reference rates, with refresh and device-local history. Repeated requests share a bounded in-memory quote cache; outages explicitly mark a recent fallback as stale. It requires an internet connection; the rate date can precede today and the result excludes transaction fees.
-- A personal arithmetic formula builder with locally saved definitions. Personal formulas are not part of the public catalog and do not check physical units.
+- Formula Studio with scientific functions, named inputs, worked steps, saved definitions, four-scenario comparison, sampled plots and readable exports. Personal formulas are not part of the public catalog and do not check physical units.
 - Typed, dimension-checked area-to-volume handoff with formula-version provenance
 - Localized numeric input/display options, responsive layout, dark theme, keyboard search shortcut, and reduced-motion styling
 - Device-local result history with view, restore, delete, pause, and clear controls
@@ -69,8 +69,8 @@ The checks use Node’s built-in test runner. Lenis is bundled locally for smoot
 - The unit registry and locale support are curated subsets, not exhaustive global coverage. Precision and rounding metadata do not yet select decimal or arbitrary-precision backends.
 - Search uses local metadata and synonyms. Photo AI requires the optional local server configuration. The AR tool requires compatible hardware and is an estimate; automatic object dimensions, depth reconstruction, and camera-based object-speed tracking are not implemented.
 - History and feedback are stored in the current browser profile. Feedback is not transmitted to the project owner. Sensitive values should not be stored on a shared device.
-- The service worker caches the app shell and previously requested same-origin resources. Offline behavior was not verified in a browser.
-- No browser-based visual/device audit, deployment, load test, or scale benchmark has completed. Do not claim production operation or million-user capacity.
+- The service worker installs a small shell and bounds its visited-resource cache to 180 entries. It does not download the whole catalog on install. Offline behavior is covered by simulated tests; physical-device offline behavior still needs checking.
+- Browser checks cover selected calculator, Studio, photo measurement, navigation, export and responsive flows. Public deployment, real-device AR, load testing, screen-reader testing and production-host verification remain outstanding. No million-user capacity claim has been established.
 
 ## Project map
 

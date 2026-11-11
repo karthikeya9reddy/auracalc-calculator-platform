@@ -7,7 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test",
+    "test": "node scripts/test.mjs",
     "dev": "node scripts/start-local.mjs",
     "build": "node scripts/build-static.mjs",
     "preview": "node scripts/dev-server.mjs dist"

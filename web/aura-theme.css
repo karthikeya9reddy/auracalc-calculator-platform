@@ -1,3 +1,4 @@
+@import url('/experience.css');
 :root { --ink:#f5f7f4; --muted:#92979b; --line:rgba(255,255,255,.12); --lime:#b8ff3d; --cyan:#70e8ff; --violet:#a583ff; --orange:#ff9d5c; --pink:#ff73be; }
 body { background:#050508; color:var(--ink); font-family:Inter, 'Space Grotesk', 'Segoe UI', sans-serif; }
 button, input { font:inherit; }

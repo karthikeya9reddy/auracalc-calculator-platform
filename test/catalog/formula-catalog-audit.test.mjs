@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { executeCalculation } from '../../src/calculation-core/index.mjs';
+import { executeCalculation, convertValue } from '../../src/calculation-core/index.mjs';
 import { publicDefinitions } from '../../catalog/public/index.mjs';
 
 function representativeValue(field) {
@@ -24,9 +24,9 @@ const auditOverrides = Object.freeze({
 function makeInputs(definition, omittedInput = null) {
   const overrides = auditOverrides[definition.id] || {};
   return Object.fromEntries(definition.inputs
-    .filter(field => field.id !== omittedInput)
     .map(field => {
-      const value = overrides[field.id] ?? representativeValue(field);
+      // Match the browser's payload, including blank optional quantity objects.
+      const value = field.id === omittedInput ? '' : overrides[field.id] ?? representativeValue(field);
       return [field.id, field.unitLabel ? value : { value, unit: field.canonicalUnit }];
     }));
 }
@@ -51,4 +51,28 @@ test('every published formula calculator returns finite, unit-bearing results fo
     }
   }
   assert.deepEqual(failures, []);
+});
+
+test('all accepted input units preserve representative formula answers', () => {
+  const failures=[];
+  for(const definition of publicDefinitions){
+    const omitted=definition.inputs.find(field=>field.required===false)?.id ?? null;
+    const inputs=makeInputs(definition,omitted);
+    const baseline=executeCalculation(definition,inputs);
+    for(const field of definition.inputs){
+      if(field.id===omitted)continue;
+      const canonical=typeof inputs[field.id]==='object'?inputs[field.id].value:inputs[field.id];
+      for(const unit of field.acceptedUnits){
+        if(unit===field.canonicalUnit)continue;
+        try{
+          const converted=convertValue(canonical,field.canonicalUnit,unit);
+          const actual=executeCalculation(definition,{...inputs,[field.id]:{value:converted,unit}});
+          for(const [id,expected]of Object.entries(baseline.outputs)){
+            assert.ok(Math.abs(actual.outputs[id].value-expected.value)<=1e-9*Math.max(1,Math.abs(expected.value)),`${id}: ${actual.outputs[id].value} vs ${expected.value}`);
+          }
+        }catch(error){failures.push(`${definition.id}/${field.id}/${unit}: ${error.message}`);}
+      }
+    }
+  }
+  assert.deepEqual(failures,[]);
 });

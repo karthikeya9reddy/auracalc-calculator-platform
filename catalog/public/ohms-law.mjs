@@ -2,7 +2,7 @@ import { CalculationError, BASE_DIMENSIONS } from '../../src/calculation-core/in
 import { physicalInput, physicalOutput, reference, r0Release, RESISTANCE, sciencePrecision, scienceRounding, stepNumber, VOLTAGE } from './science-helpers.mjs';
 
 export const ohmsLaw = Object.freeze({
-  id: 'ohms-law', version: '1.0.0', title: 'Ohm’s law: solve one missing value',
+  id: 'ohms-law', version: '1.0.1', title: 'Ohm’s law: solve one missing value',
   discipline: 'Electrical fundamentals and electronics',
   fields: Object.freeze(['Physics, astronomy, astrophysics, and cosmology', 'Education, assessment, and learning', 'Electrical engineering and power systems', 'Electronics and embedded hardware']),
   category: 'Electrical basics', description: 'Enter exactly two values to solve the third in a simple resistive DC circuit.',
@@ -38,6 +38,7 @@ export const ohmsLaw = Object.freeze({
     if (voltage !== undefined && current !== undefined) {
       if (current === 0) throw new CalculationError('ZERO_CURRENT_CANNOT_SOLVE_RESISTANCE', 'Current must be greater than zero to solve resistance from voltage and current.', { fieldId: 'current' });
       resistance = voltage / current;
+      if (resistance <= 0) throw new CalculationError('POSITIVE_RESISTANCE_REQUIRED', 'These values imply zero resistance, outside this positive-resistance model.', { fieldId: 'voltage' });
     } else if (voltage !== undefined && resistance !== undefined) {
       current = voltage / resistance;
     } else {

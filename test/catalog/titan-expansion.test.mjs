@@ -114,8 +114,8 @@ test('Titan expansion registers one hundred distinct traceable formula calculato
   assert.equal(titanCalculators.length, 100);
   assert.equal(referenceCases.length, 100);
   assert.equal(new Set(titanCalculators.map(tool => tool.id)).size, 100);
-  assert.equal(publicDefinitions.length, 301);
-  assert.equal(publicDefinitions.filter(tool => tool.catalogKind === 'calculator').length, 301);
+  assert.equal(publicDefinitions.length, 303);
+  assert.equal(publicDefinitions.filter(tool => tool.catalogKind === 'calculator').length, 303);
   assert.equal(publicConverterDefinitions.length, 3038);
   for (const tool of titanCalculators) {
     assert.equal(tool.catalogKind, 'calculator');
@@ -146,7 +146,7 @@ test('new calculators have no duplicate IDs or titles in the published formula c
   for (const tool of titanCalculators) {
     assert.ok(!existing.some(item => item.title.toLowerCase() === tool.title.toLowerCase()), `duplicate title: ${tool.title}`);
   }
-  assert.equal(publicDefinitions.length, 301);
+  assert.equal(publicDefinitions.length, 303);
 });
 
 test('probability, geometry, vector, and financial boundary conditions fail clearly', () => {

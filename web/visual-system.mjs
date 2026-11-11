@@ -293,13 +293,18 @@ function renderMotion(svg, id, definition, result, locale) {
 }
 
 function renderCircuit(svg, definition, result, locale) {
-  svg.append(element('path', { d: 'M58 73 H146 M202 73 H286 V133 H58 V73 M286 73 H388', class: 'visual-wire' }));
-  svg.append(element('rect', { x: 146, y: 51, width: 56, height: 44, rx: 4, class: 'visual-component' }));
-  svg.append(element('rect', { x: 286, y: 51, width: 56, height: 44, rx: 4, class: 'visual-component-alt' }));
-  svg.append(element('path', { d: 'M58 66 V80 M48 69 V77 M388 63 V83 M379 67 V79', class: 'visual-wire' }));
-  label(svg, 150, 77, 'R₁'); label(svg, 290, 77, 'R₂');
-  label(svg, 50, 157, dimText(definition, result, definition.inputs[0]?.id, locale) || 'input');
-  label(svg, 258, 157, outputText(definition, result, definition.outputs[0]?.id, locale) || 'result');
+  // Do not invent a two-resistor topology for every electrical formula.
+  if (definition.id !== 'ohms-law') return renderProcess(svg, definition, result, locale);
+  svg.append(element('path', { d: 'M90 82 V54 H194 M274 54 H390 V142 H90 V112', class: 'visual-wire' }));
+  svg.append(element('circle', { cx:90,cy:97,r:15,class:'visual-component-alt' }));
+  label(svg,85,94,'+'); label(svg,86,108,'−');
+  svg.append(element('rect',{x:194,y:42,width:80,height:24,rx:3,class:'visual-component'}));
+  label(svg,230,58,'R');
+  svg.append(element('path',{d:'M310 54 H348 M340 48 L348 54 L340 60',class:'visual-arrow'}));
+  label(svg,48,176,outputText(definition,result,'voltage',locale));
+  label(svg,278,176,outputText(definition,result,'current',locale));
+  label(svg,169,103,outputText(definition,result,'resistance',locale));
+  label(svg,170,125,'Ideal DC resistor · V = I × R','visual-small-label');
 }
 
 function renderFlow(svg, definition, result, locale) {

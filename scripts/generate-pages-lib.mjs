@@ -9,6 +9,13 @@ import { getUnit } from '../src/calculation-core/index.mjs';
 
 const scriptRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
+async function writeGenerated(file, content) {
+  try { if (await readFile(file, 'utf8') === content) return; }
+  catch (error) { if (error.code !== 'ENOENT') throw error; }
+  await mkdir(dirname(file), { recursive: true });
+  await writeFile(file, content, 'utf8');
+}
+
 function escapeHtml(value) {
   return String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 }
@@ -39,14 +46,9 @@ export async function generateCalculatorPages(root = scriptRoot) {
     try { page = await readFile(resolve(oldPage, 'index.html'), 'utf8'); }
     catch (error) { if (error?.code !== 'ENOENT') throw error; }
     // Remove only pages bearing this generator's calculator marker; leave unrelated files untouched.
-    if (page.includes(`data-calculator-id="${entry.name}" data-catalog-kind="calculator"`)) {
+    if (page.includes(`data-calculator-id="${entry.name}" data-catalog-kind="calculator"`) || page.includes(`data-calculator-id="${entry.name}" data-catalog-kind="converter"`)) {
       await rm(oldPage, { recursive: true, force: true });
     }
-  }
-  for (const definition of converterDefinitions) {
-    const oldPage = resolve(calculatorRoot, definition.id);
-    if (!oldPage.startsWith(`${calculatorRoot}${sep}`)) throw new Error(`Unsafe legacy converter path: ${definition.id}`);
-    await rm(oldPage, { recursive: true, force: true });
   }
   for (const definition of [...calculatorDefinitions, ...converterDefinitions]) {
     const isConverter = definition.catalogKind === 'converter';
@@ -54,7 +56,6 @@ export async function generateCalculatorPages(root = scriptRoot) {
     const routeRoot = isConverter ? '/converters' : '/calculators';
     const toolGroup = isConverter ? 'converters' : 'formula calculators';
     const folder = resolve(outputRoot, definition.id);
-    await mkdir(folder, { recursive: true });
     const description = `${definition.description} Method, inputs, units, source references, and limitations are documented.`;
     const structuredData = JSON.stringify({
       '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: definition.title,
@@ -86,7 +87,7 @@ export async function generateCalculatorPages(root = scriptRoot) {
   <dialog class="app-dialog small-dialog" id="noticeDialog" aria-labelledby="noticeTitle" data-lenis-prevent><div class="dialog-heading"><h2 id="noticeTitle">AuraCalc note</h2><button class="icon-action" type="button" data-close-dialog aria-label="Close">×</button></div><p id="noticeText"></p><div class="dialog-actions"><button class="button button-primary" type="button" data-close-dialog>Got it</button></div></dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body></html>`;
-    await writeFile(resolve(folder, 'index.html'), page, 'utf8');
+    await writeGenerated(resolve(folder, 'index.html'), page);
   }
   await generateFieldPages(root, calculatorDefinitions);
   const definitions = calculatorDefinitions;
@@ -116,7 +117,7 @@ export async function generateCalculatorPages(root = scriptRoot) {
   if (finalWorker === updatedConverterWorker && !worker.includes('GENERATED_FIELD_ROUTES_START')) {
     throw new Error('Service worker field-route markers are missing.');
   }
-  await writeFile(workerPath, finalWorker, 'utf8');
+  await writeGenerated(workerPath, finalWorker);
   return Object.freeze({ calculators: definitions.length, converters: converterDefinitions.length });
 }
 
@@ -184,8 +185,7 @@ export async function generateFieldPages(root = scriptRoot, definitions = listPu
   <footer class="site-footer compact-footer"><a class="brand" href="/" aria-label="AuraCalc home"><span class="brand-symbol" aria-hidden="true">A</span><span>AURACALC</span></a><small>Documented methods. Visible limits. Traceable results.</small></footer>
 </body></html>`;
     const folder = resolve(outputRoot, slug);
-    await mkdir(folder, { recursive: true });
-    await writeFile(resolve(folder, 'index.html'), page, 'utf8');
+    await writeGenerated(resolve(folder, 'index.html'), page);
   }
   const publicOrigin = process.env.AURACALC_PUBLIC_URL || process.env.NEXORA_PUBLIC_URL;
   const populatedFields = FIELD_DIRECTORY.filter(field => fieldToolMap.get(field).length > 0).length;
@@ -236,6 +236,6 @@ export async function generateFieldPages(root = scriptRoot, definitions = listPu
   </main>
   <footer class="site-footer compact-footer"><a class="brand" href="/" aria-label="AuraCalc home"><span class="brand-symbol" aria-hidden="true">A</span><span>AURACALC</span></a><small>Documented methods. Visible limits. Traceable results.</small></footer>
 </body></html>`;
-  await writeFile(resolve(outputRoot, 'index.html'), directoryPage, 'utf8');
+  await writeGenerated(resolve(outputRoot, 'index.html'), directoryPage);
   return FIELD_DIRECTORY.length;
 }

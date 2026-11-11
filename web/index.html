@@ -96,19 +96,30 @@
         <p class="catalog-truth"><span class="status-dot"></span><span id="catalog-truth-text">Only released tools are counted as live. The wider directory shows research fields awaiting calculator-specific review.</span></p>
       </section>
 
-      <section class="converter-section" aria-labelledby="converter-section-title">
-        <div class="converter-section-copy"><p class="eyebrow">A SEPARATE TOOLSET</p><h2 id="converter-section-title">Need a unit conversion?</h2><p>Convert measurements between supported units with dimension checks and a documented reference. Converters stay separate from the formula calculator catalog and its count.</p></div>
-        <a class="converter-section-link" href="/converters/"><span>Open converters</span><span aria-hidden="true">↗</span></a>
-      </section>
-      <section class="converter-section builder-promo" aria-labelledby="builder-promo-title"><div class="converter-section-copy"><p class="eyebrow">MAKE IT YOURS</p><h2 id="builder-promo-title">Create your own calculator.</h2><p>Turn a simple formula into a reusable personal calculator and save it on this device.</p></div><a class="converter-section-link" href="/builder/"><span>Open formula builder</span><span aria-hidden="true">↗</span></a></section>
+      <section class="workspace-gallery" aria-labelledby="workspace-title">
+  <div class="workspace-intro"><div><p class="eyebrow">GO BEYOND THE ANSWER</p><h2 id="workspace-title">More ways to<br><em>figure it out.</em></h2></div><p>Convert a value. Build an idea.<br>Put a measurement to work.</p></div>
+  <div class="workspace-grid">
+    <article class="workspace-tile workspace-convert">
+      <div class="workspace-kicker"><span>01 / CONVERT</span><span aria-hidden="true">↔</span></div>
+      <div class="unit-art" aria-hidden="true"><span>1 <small>metre</small></span><i>↔</i><span>100 <small>centimetres</small></span></div>
+      <h3>A different unit.<br>The same meaning.</h3><p>Lengths, temperatures, currencies and more, organized by what you want to convert.</p>
+      <a href="/converters/" class="workspace-link">Explore converters <span aria-hidden="true">↗</span></a>
+    </article>
+    <article class="workspace-tile workspace-build">
+      <div class="workspace-kicker"><span>02 / CREATE</span><span aria-hidden="true">ƒ</span></div>
+      <div class="formula-art" aria-hidden="true"><span>YOUR FORMULA</span><code>sqrt(a² + b²)</code><div><i>a = 3</i><i>b = 4</i><b>→ 5</b></div></div>
+      <h3>From “what if”<br>to your own tool.</h3><p>Write a formula, compare scenarios and explore how the answer changes. Save it for next time.</p>
+      <a href="/builder/" class="workspace-link">Open Formula Studio <span aria-hidden="true">↗</span></a>
+    </article>
+    <article class="workspace-tile workspace-measure">
+      <div class="workspace-measure-copy"><div class="workspace-kicker"><span>03 / MEASURE</span></div><h3>See it.<br>Measure it.<br><em>Make it useful.</em></h3><p>A visual workspace for photo measurements, supported AR surfaces and your device’s speed.</p><a href="/measure/" class="workspace-link">Enter Measurement Lab <span aria-hidden="true">↗</span></a></div>
+      <div class="measure-art" aria-hidden="true"><svg viewBox="0 0 460 330"><defs><pattern id="lab-grid" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M30 0H0V30" fill="none" stroke="#254048"/></pattern></defs><rect width="460" height="330" rx="24" fill="url(#lab-grid)"/><path d="M80 115L265 65L380 130L190 190Z" fill="#24494c" stroke="#8aeadc" stroke-width="2"/><path d="M80 115V215L190 280V190M190 280L380 220V130" fill="none" stroke="#8aeadc" stroke-width="2"/><path d="M65 100L250 50M65 93V107M250 43V57" stroke="#b8ff3d" stroke-width="2"/><circle class="measure-scan" cx="265" cy="65" r="10" fill="none" stroke="#b8ff3d"/><text x="105" y="56" fill="#b8ff3d" font-size="13" font-family="monospace">A NEW PERSPECTIVE</text><path d="M25 60V25H60M400 25H435V60M435 270V305H400M60 305H25V270" fill="none" stroke="#8aeadc" stroke-width="2"/></svg><span class="measure-art-caption">A workspace for real-world questions</span></div>
+      <nav class="workspace-measure-modes" aria-label="Measurement tools"><a href="/measure/photo/">Photo + AI <span>Mark, calibrate, measure ↗</span></a><a href="/measure/ar/">Live AR <span>Track surface distances ↗</span></a><a href="/measure/speed/">Speedometer <span>See device speed ↗</span></a></nav>
+    </article>
+  </div>
+</section>
 
-      <section class="visual-measure-section" aria-labelledby="visual-measure-title" data-scroll-reveal>
-        <div class="visual-measure-mark" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 36 36 8M14 8h22v22M8 14v22h22"/><circle cx="24" cy="24" r="3"/></svg></div>
-        <div class="visual-measure-copy"><p class="eyebrow">A VISUAL WORKSPACE</p><h2 id="visual-measure-title">Explore ways to measure.</h2><p>Use a photo reference, supported AR or your device speedometer. Photo marking stays on your device; optional AI analysis sends your selected image only when you request it.</p></div>
-        <a class="visual-measure-link" href="/measure/"><span>Open Visual Measurement Lab</span><span aria-hidden="true">↗</span></a>
-      </section>
-
-      <section class="field-section" id="fields" aria-labelledby="fields-title" data-scroll-reveal>
+<section class="field-section" id="fields" aria-labelledby="fields-title" data-scroll-reveal>
         <div class="section-intro field-intro"><div><p class="eyebrow">THE FIELD MAP / RESEARCH SCOPE</p><h2 id="fields-title">48 fields.<br><span>One careful method.</span></h2></div><p class="section-note">A field appears in the live catalog as its tools pass source, verification, and risk review.</p></div>
         <div class="field-toolbar"><p id="field-status" aria-live="polite">Showing highlighted fields.</p><button class="text-button" type="button" id="toggle-fields" aria-expanded="false">View all 48 fields <span aria-hidden="true">↓</span></button></div>
         <div class="field-grid" id="field-grid"></div>

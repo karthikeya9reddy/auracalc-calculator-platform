@@ -42,6 +42,7 @@ import { titanCalculators } from './titan-expansion.mjs';
 import { unitConversionCalculators } from './unit-conversion-expansion.mjs';
 import { foodEnergyFromLabel } from './food-energy-from-label.mjs';
 import { verifiedPilot } from './verified-pilot.mjs';
+import { studentPlanning } from './student-planning.mjs';
 
 const formulaDefinitions = [
   percentageChange,
@@ -86,6 +87,7 @@ const formulaDefinitions = [
   ...titanCalculators,
   foodEnergyFromLabel,
   ...verifiedPilot,
+  ...studentPlanning,
 ];
 
 export const publicDefinitions = Object.freeze(formulaDefinitions.map(definition => Object.freeze({

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pixelDistance, polygonPixelArea, scaleFromReference, scaledArea, scaledDistance } from '../../web/measurement-core.mjs';
+import { pixelDistance, polygonPixelArea, scaleFromReference, scaledArea, scaledDistance, angleAt } from '../../web/measurement-core.mjs';
 import { convertValue, getUnit } from '../../src/calculation-core/index.mjs';
 
 test('pixel distance uses Euclidean distance and rejects invalid coordinates', () => {
@@ -19,7 +19,7 @@ test('known reference creates a consistent metric scale and transfers to support
 test('scale rejects missing or unsupported calibration values', () => {
   assert.throws(() => scaleFromReference(0, 2, 'm'), /greater than zero/);
   assert.throws(() => scaleFromReference(10, -2, 'cm'), /greater than zero/);
-  assert.throws(() => scaleFromReference(10, 2, 'yd'), /Choose mm, cm, m/);
+  assert.throws(() => scaleFromReference(10, 2, 'yd'), /supported length unit/);
 });
 
 test('polygon area and calibrated area agree with a known rectangle', () => {
@@ -32,6 +32,20 @@ test('polygon area and calibrated area agree with a known rectangle', () => {
 });
 
 test('area requires at least three points and rejects degenerate calibration scale', () => {
-  assert.throws(() => polygonPixelArea([{ x: 0, y: 0 }, { x: 1, y: 1 }]), /at least three/);
-  assert.throws(() => scaledArea([{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }], 0, 'm'), /greater than zero/);
+  assert.throws(() => polygonPixelArea([{ x: 0, y: 0 }, { x: 1, y: 1 }]), /3–200/);
+  assert.throws(() => scaledArea([{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0, y: 1 }], 0, 'm'), /greater than zero/);
+});
+
+test('area rejects crossed boundaries, duplicate points, degenerate shapes and overflow',()=>{
+  for(const p of [[[0,0],[10,10],[0,10],[10,0]],[[0,0],[1,0],[0,0]],[[0,0],[1,1],[2,2]],[[0,0],[1e300,0],[0,1e300]]])assert.throws(()=>polygonPixelArea(p.map(([x,y])=>({x,y}))));
+  const shape=[[0,0],[4,0],[4,1],[1,1],[1,4],[0,4]].map(([x,y])=>({x:x+1e9,y:y+1e9}));
+  assert.equal(polygonPixelArea(shape),7);assert.equal(polygonPixelArea([...shape].reverse()),7);
+  assert.throws(()=>scaledDistance({x:0,y:0},{x:1e200,y:0},1e200));
+  assert.throws(()=>pixelDistance({x:null,y:0},{x:1,y:0}));
+});
+
+test('photo angle uses the middle point and rejects coincident vertices',()=>{
+  assert.equal(angleAt({x:1,y:0},{x:0,y:0},{x:0,y:1}),90);
+  assert.equal(angleAt({x:-1,y:0},{x:0,y:0},{x:1,y:0}),180);
+  assert.throws(()=>angleAt({x:0,y:0},{x:0,y:0},{x:1,y:1}));
 });

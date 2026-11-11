@@ -35,7 +35,8 @@ export function executeCalculation(definition, rawInputs, options = {}) {
   const inputRecords = Object.create(null);
   for (const field of definition.inputs) {
     const raw = Object.hasOwn(rawInputs, field.id) ? rawInputs[field.id] : undefined;
-    if (raw === undefined || raw === null || raw === '') {
+    const candidateValue = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw.value : raw;
+    if (candidateValue === undefined || candidateValue === null || (typeof candidateValue === 'string' && !candidateValue.trim())) {
       if (field.required === false) continue;
       throw new CalculationError('MISSING_INPUT', `Enter a value for ${field.label || field.id}.`, { fieldId: field.id });
     }

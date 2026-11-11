@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="700" viewBox="0 0 1000 700">
+<defs><pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#2b3d46" stroke-width="1"/></pattern><linearGradient id="surface" x2="1" y2="1"><stop stop-color="#8dc1c0"/><stop offset="1" stop-color="#377078"/></linearGradient></defs>
+<rect width="1000" height="700" fill="#102027"/><rect width="1000" height="700" fill="url(#grid)"/>
+<rect x="250" y="200" width="500" height="300" rx="2" fill="url(#surface)" stroke="#e4f5f1" stroke-width="3"/>
+<g fill="#e4f5f1" font-family="sans-serif"><text x="60" y="60" font-size="23">PRACTICE BOARD · FLAT, FRONT VIEW</text><text x="500" y="344" font-size="26" text-anchor="middle">A tabletop to measure</text><text x="500" y="380" font-size="18" text-anchor="middle">Try length, area, or the corner angle.</text></g>
+<path d="M250 570V610M250 590H750M750 570V610" stroke="#b8ff3d" stroke-width="3"/>
+<text x="500" y="640" fill="#b8ff3d" text-anchor="middle" font-family="sans-serif" font-size="24">Known reference: 100 cm</text>
+</svg>
