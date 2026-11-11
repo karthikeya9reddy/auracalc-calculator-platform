@@ -29,7 +29,7 @@ The attached Project Titan directive requests 100 additional formula-based calcu
 
 ## Current implementation
 
-- The Titan milestone reached 298 formula-based calculators: the original 198 plus 100 new definitions. The subsequent food-label energy tool brings the current registry to 299.
+- The Titan milestone reached 298 formula-based calculators: the original 198 plus 100 new definitions. The subsequent food-label energy tool and two sourced physics pilot methods bring the current registry to 301. See TITAN_RECONSTRUCTION.md for the latest verification record.
 - Each of the 100 added calculators has an independently maintained known-answer regression case, input boundaries, traceable method metadata, and field tags; catalog tests also verify result traces and next-step handoffs.
 - The new unit definitions are dimension-checked and versioned in the shared SI unit registry.
 - The build creates individual calculator and converter routes and updates field landing pages from the registry.
@@ -38,7 +38,7 @@ The attached Project Titan directive requests 100 additional formula-based calcu
 ## Known release gaps
 
 - No production deployment was performed.
-- No live exchange-rate provider is configured; currency labels and formatting do not imply current FX data.
+- A Frankfurter reference-rate integration is implemented with dated quotes, refresh, caching and explicit stale fallback. Automated tests use controlled provider responses; live provider operation was not verified in this batch. Quotes are not bank transaction prices.
 - No hosted generative-AI service is configured. Input help and next-step suggestions are deterministic, local, and source-scoped.
 - No production-grade AR/WebXR measurement, automatic image recognition, or depth sensing is claimed.
 - Static hosting has not been load-tested for millions of simultaneous users; that requires a measured hosting/CDN architecture and traffic tests.

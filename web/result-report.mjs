@@ -14,6 +14,7 @@ export function createResultReport({ definition, result, currencyCode, formatOut
   else lines.push('No additional working steps were recorded.');
   lines.push('', 'RESULTS');
   for (const field of definition.outputs) if (result.outputs?.[field.id]) lines.push(`${field.label}: ${formatOutput(field, result.outputs[field.id])}`);
+  lines.push('', 'PRECISION AND ROUNDING', definition.precision?.numericModel || 'Numeric model not recorded.', definition.precision?.note || '', definition.rounding?.policy || 'Rounding policy not recorded.', 'Displayed units may differ from the stored result units. Small nonzero values may be shown in scientific notation.');
   if (result.warnings?.length) lines.push('', 'WARNINGS', ...result.warnings.map(item => `- ${item}`));
   if (definition.assumptions?.length) lines.push('', 'ASSUMPTIONS', ...definition.assumptions.map(item => `- ${item}`));
   if (definition.limitations?.length) lines.push('', 'LIMITATIONS', ...definition.limitations.map(item => `- ${item}`));

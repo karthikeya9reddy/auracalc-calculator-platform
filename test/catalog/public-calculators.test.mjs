@@ -7,7 +7,7 @@ import { next100Calculators } from '../../catalog/public/next-100-expansion.mjs'
 const calculator = id => publicRegistry.get(id);
 
 test('public catalog contains only source-backed R0 definitions with release evidence', () => {
-  assert.equal(publicDefinitions.length, 299);
+  assert.equal(publicDefinitions.length, 301);
   assert.equal(new Set(publicDefinitions.map(definition => definition.id)).size, publicDefinitions.length);
   assert.equal(publicRegistry.listPublished().length, publicDefinitions.length);
   assert.ok(publicDefinitions.every(definition => definition.catalogKind === 'calculator'));

@@ -26,6 +26,28 @@ export function convertCurrency(amount, rate) {
   return amount * rate;
 }
 
+/** In-memory quotes only; amounts and personal inputs are never cached here. */
+export function createRateCache({ load = fetchCurrencyRate, clock = Date.now, ttl = 30 * 60 * 1000 } = {}) {
+  const cache = new Map(), pending = new Map();
+  return async function getRate(from, to, { refresh = false } = {}) {
+    const base = currencyCode(from), quote = currencyCode(to), key = `${base}/${quote}`;
+    const prior = cache.get(key);
+    if (!refresh && prior && clock() - prior.checkedAt < ttl) return {...prior, cached:true, stale:false};
+    if (pending.has(key)) return pending.get(key);
+    const task = (async () => {
+      try {
+        const value = {...await Promise.resolve().then(() => load(base, quote)), checkedAt:clock(), cached:false, stale:false};
+        if (cache.size >= 100) cache.delete(cache.keys().next().value);
+        cache.set(key,value); return value;
+      } catch(error) {
+        if (prior && clock() - prior.checkedAt < 24 * 60 * 60 * 1000) return {...prior,cached:true,stale:true};
+        throw error;
+      } finally { pending.delete(key); }
+    })();
+    pending.set(key,task); return task;
+  };
+}
+
 export function currencyHistoryRecord({ amount, quote, converted, id, calculatedAt }) {
   if (typeof id !== 'string' || !id || !Number.isFinite(amount) || !Number.isFinite(converted) || !quote || !Number.isFinite(quote.rate) || quote.rate <= 0) throw new TypeError('A valid currency conversion is required.');
   const from = currencyCode(quote.base), to = currencyCode(quote.quote);

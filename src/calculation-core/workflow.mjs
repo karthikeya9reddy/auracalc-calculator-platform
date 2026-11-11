@@ -28,6 +28,9 @@ export function createWorkflowHandoff({ sourceDefinition, sourceResult, outputId
       inputId,
     });
   }
+  if ((outputField.semanticType || inputField.semanticType) && outputField.semanticType !== inputField.semanticType) {
+    throw new CalculationError('WORKFLOW_SEMANTIC_MISMATCH', 'These quantities share units but represent different concepts.');
+  }
   if (inputField.workflowFrom && !inputField.workflowFrom.includes(`${sourceDefinition.id}.${outputId}`)) {
     throw new CalculationError('WORKFLOW_LINK_NOT_ALLOWED', 'This input is not configured to receive that result in the current workflow.');
   }
@@ -38,6 +41,11 @@ export function createWorkflowHandoff({ sourceDefinition, sourceResult, outputId
     throw new CalculationError('WORKFLOW_TEMPERATURE_KIND_MISMATCH', 'Absolute temperature and temperature differences cannot be connected.');
   }
   const carriedValue = convertValue(outputValue.value, outputValue.unit, inputField.canonicalUnit);
+  if ((inputField.range?.min !== undefined && carriedValue < inputField.range.min)
+    || (inputField.range?.max !== undefined && carriedValue > inputField.range.max)
+    || (inputField.integer && !Number.isSafeInteger(carriedValue))) {
+    throw new CalculationError('WORKFLOW_OUTSIDE_INPUT_DOMAIN', 'This result falls outside the destination input’s supported range.');
+  }
   return Object.freeze({
     targetCalculatorId: targetDefinition.id,
     targetInputId: inputId,

@@ -7,7 +7,7 @@ import { recommendNextSteps } from '../../web/next-step-engine.mjs';
 
 test('the separate converter catalog provides more than 2,000 real directed unit conversions', () => {
   assert.ok(unitConversionCalculators.length >= 2800);
-  assert.equal(publicDefinitions.length, 299);
+  assert.equal(publicDefinitions.length, 301);
   assert.equal(publicDefinitions.some(definition => definition.id === 'angular-speed-from-rpm'), false);
   assert.equal(listPublicConverters().length, unitConversionCalculators.length);
   assert.equal([...publicRegistry.listPublished()].some(definition => definition.catalogKind === 'converter'), false);

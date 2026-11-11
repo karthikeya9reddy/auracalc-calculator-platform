@@ -308,6 +308,8 @@ const APP_SHELL = [
   '/calculators/screen-pixel-density/',
   '/calculators/construction-waste-adjusted-volume/',
   '/calculators/food-energy-from-label/',
+  '/calculators/net-radiative-heat-transfer/',
+  '/calculators/sound-intensity-level/',
   // GENERATED_CALCULATOR_ROUTES_END
   // GENERATED_CONVERTER_ROUTES_START
   '/converters/convert-meters-to-kilometers/',

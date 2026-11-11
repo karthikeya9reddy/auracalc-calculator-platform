@@ -17,3 +17,14 @@ test('food energy search finds the calculator that asks for label information', 
   const index = makeSearchIndex(listPublicCalculators());
   assert.ok(searchIndex(index, 'grams to calories').some(item => item.id === 'food-energy-from-label'));
 });
+
+test('search understands natural intent, bounded typos, quantities and strict short unit tokens', () => {
+  const calculators = makeSearchIndex(listPublicCalculators()), converters = makeSearchIndex(listPublicConverters());
+  assert.equal(searchIndex(calculators,'force over area')[0].id,'pressure-from-force-area');
+  assert.equal(searchIndex(calculators,'how much electricity does my computer use')[0].id,'electrical-energy-power-time');
+  assert.ok(searchIndex(calculators,'rectangel area').some(x=>x.id==='rectangle-area'));
+  assert.ok(searchIndex(converters,'500 N to lbf').some(x=>x.id==='convert-newtons-to-pounds-force'));
+  assert.ok(searchIndex(converters,'kg to lbs').some(x=>x.id==='convert-kilograms-to-pounds'));
+  assert.equal(matchesSearchText('kilometer','m'),false);
+  assert.equal(matchesSearchText('capital','calorie'),false);
+});

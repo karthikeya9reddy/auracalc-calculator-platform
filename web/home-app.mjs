@@ -17,10 +17,13 @@ import { InputAssistant } from './input-assistant.mjs';
 import { catalogTopics } from './catalog-topics.mjs';
 import { makeSearchIndex, searchIndex, searchTokens, matchesSearchText } from './unified-search.mjs';
 import { MEASUREMENT_TOOLS } from './measurement-search.mjs';
+import { formatResultNumber } from './result-number.mjs';
+import { attachConversionQuery } from './conversion-query.mjs';
 
 const calculators = listPublicCalculators();
 const converters = listPublicConverters();
 const converterSearchIndex = makeSearchIndex(converters);
+const calculatorSearchIndex = makeSearchIndex(calculators);
 const measurementSearchIndex = makeSearchIndex(MEASUREMENT_TOOLS);
 const inputAssistant = new InputAssistant({
   calculators,
@@ -127,7 +130,7 @@ function normalize(value) {
 }
 
 function formatNumber(value, options = {}) {
-  return new Intl.NumberFormat(locale, { maximumFractionDigits: 6, ...options }).format(value);
+  return formatResultNumber(value, locale, options);
 }
 
 function readFavorites() {
@@ -160,10 +163,11 @@ function matchesQuery(definition, query) {
 }
 
 function matchingCalculators() {
-  return calculators.filter(definition => {
+  const candidates = searchTokens(activeQuery).length ? searchIndex(calculatorSearchIndex, activeQuery, Infinity) : calculators;
+  return candidates.filter(definition => {
     if (activeCategory !== 'All tools' && definition.category !== activeCategory) return false;
     if (favoritesOnly && !favorites.includes(definition.id)) return false;
-    return matchesQuery(definition, activeQuery);
+    return searchTokens(activeQuery).length > 0 || !/convert|conversion/i.test(activeQuery);
   });
 }
 
@@ -236,7 +240,7 @@ function renderCatalog() {
         const section = node('section', 'search-result-group'); section.append(node('h3', '', 'Converters'));
         const links = node('div', 'search-result-links');
         if (currencyMatch) { const currency = node('a', '', 'Currency exchange rates'); currency.href = '/currency/'; links.append(currency); extraMatches++; }
-        for (const conversion of matchingConversions) { const link = node('a', '', conversion.title); link.href = `/converters/${encodeURIComponent(conversion.id)}/`; links.append(link); }
+        for (const conversion of matchingConversions) { const link = node('a', '', conversion.title); link.href = `/converters/${encodeURIComponent(conversion.id)}/`; attachConversionQuery(link, conversion, query); links.append(link); }
         const all = node('a', 'search-all-converters', 'Browse all converters ↗'); all.href = '/converters/'; links.append(all);
         section.append(links); additions.append(section); extraMatches += matchingConversions.length + 1;
       }
@@ -811,6 +815,13 @@ function setupSearch() {
   form?.addEventListener('submit', event => {
     event.preventDefault();
     document.querySelector('#explore')?.scrollIntoView({ behavior: 'smooth' });
+  });
+  input?.addEventListener('keydown', event => {
+    if (event.key === 'ArrowDown') {
+      const first = document.querySelector('#unified-search-additions:not([hidden]) a') || document.querySelector('#auraCalculatorGrid .calc-card');
+      if (first) { event.preventDefault(); first.focus(); }
+    }
+    if (event.key === 'Escape') { clearSearch(); input.focus(); }
   });
   document.querySelector('#clear-search')?.addEventListener('click', clearSearch);
   document.querySelector('#reset-search')?.addEventListener('click', clearSearch);

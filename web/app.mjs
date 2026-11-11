@@ -31,6 +31,10 @@ import { renderCalculationVisual } from './visual-system.mjs';
 import { compatibleNextSteps, recommendNextSteps } from './next-step-engine.mjs';
 import { InputAssistant } from './input-assistant.mjs';
 import { createResultReport } from './result-report.mjs';
+import { openResultReport } from './report-view.mjs';
+import { formatResultNumber } from './result-number.mjs';
+import { historyRecordUsable, historyRecordRoute } from './history-record.mjs';
+import { attachConversionQuery } from './conversion-query.mjs';
 import { outputConversionPayload } from './conversion-handoff.mjs';
 import { makeSearchIndex, searchIndex, searchTokens, matchesSearchText } from './unified-search.mjs';
 
@@ -129,7 +133,7 @@ function currencyName(code) {
 }
 
 function formatNumber(value, options = {}) {
-  return new Intl.NumberFormat(locale, { maximumFractionDigits: 6, ...options }).format(value);
+  return formatResultNumber(value, locale, options);
 }
 
 function normaliseText(value) {
@@ -433,7 +437,9 @@ function buildQuantityControl(field, initial = undefined, definition, form) {
   input.required = field.required !== false;
   input.setAttribute('aria-describedby', `${inputId}-help`);
   input.setAttribute('data-field-id', field.id);
-  if (initial && initial.value !== undefined) input.value = String(initial.value);
+  if (initial && initial.value !== undefined) input.value = typeof initial.value === 'number'
+    ? new Intl.NumberFormat(locale, { useGrouping: false, maximumSignificantDigits: 17 }).format(initial.value)
+    : String(initial.value);
   let unitControl;
   if (field.unitLabel) {
     const currencyCode = form.elements.namedItem('display-currency')?.value || activeCurrencyCode;
@@ -524,7 +530,7 @@ function renderCalculatorPage(definition, runtime) {
   }
   if (measurementPayload?.calculatorId === definition.id && Number.isFinite(Number(measurementPayload.value))) {
     const inputField = definition.inputs.find(field => field.id === measurementPayload.inputId);
-    const sourceUnit = getUnit(measurementPayload.unit);
+    const sourceUnit = (() => { try { return getUnit(measurementPayload.unit); } catch { return null; } })();
     const targetUnit = inputField && getUnit(inputField.canonicalUnit);
     if (inputField && sourceUnit && targetUnit && dimensionsEqual(sourceUnit.dimension, targetUnit.dimension)) {
       try {
@@ -729,6 +735,7 @@ function renderCalculationResult(definition, result, rawInputs, resultCard, hand
     for (const outputField of outputs.slice(1)) subgrid.append(renderOutputRow(definition, outputField, result, false, selectedUnits, currencyCode));
     resultCard.append(subgrid);
   }
+  const answerEnd = resultCard.lastElementChild;
   const visual = renderCalculationVisual(definition, result, locale);
   if (visual) resultCard.append(visual);
   if (handoff) {
@@ -755,17 +762,27 @@ function renderCalculationResult(definition, result, rawInputs, resultCard, hand
   const save = node('button', 'button button-secondary', 'Save to history');
   save.type = 'button';
   save.addEventListener('click', () => saveCalculationToHistory(definition, result, rawInputs, context, handoff));
-  const exportButton = node('button', 'button button-quiet', 'Export result');
-  exportButton.type = 'button';
-  exportButton.addEventListener('click', () => downloadText(`${definition.id}-${new Date(result.calculatedAt).toISOString().slice(0, 10)}.txt`, createResultReport({
+  const reportOptions = () => ({
     definition, result, currencyCode: context?.currencyCode,
     unitSymbol: id => { try { return getUnit(id).symbol; } catch { return id || ''; } },
     formatOutput: (field, record) => formatOutput(definition, field, record, selectedUnits[field.id] || record.unit, currencyCode),
-  })));
+  });
+  const print = node('button', 'button button-secondary', 'Print / PDF');
+  print.type = 'button';
+  print.addEventListener('click', () => { if (!openResultReport(reportOptions())) showToast('Allow a new tab for the report, or download the text version.'); });
+  const copy = node('button', 'button button-quiet', 'Copy answer');
+  copy.type = 'button';
+  copy.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(definition.outputs.map(field => `${field.label}: ${reportOptions().formatOutput(field, result.outputs[field.id])}`).join('\n')); showToast('Answer copied with its units.'); }
+    catch { showToast('Copy is unavailable. You can download the report instead.'); }
+  });
+  const exportButton = node('button', 'button button-quiet', 'Download text');
+  exportButton.type = 'button';
+  exportButton.addEventListener('click', () => downloadText(`${definition.id}-${new Date(result.calculatedAt).toISOString().slice(0, 10)}.txt`, createResultReport(reportOptions())));
   const report = node('a', 'button button-quiet', 'Report an issue');
   report.href = `/?feedback=calculation&calculator=${encodeURIComponent(definition.id)}#feedback`;
-  actions.append(save, exportButton, report);
-  resultCard.append(actions);
+  actions.append(save, print, copy, exportButton, report);
+  resultCard.insertBefore(actions, answerEnd.nextSibling);
 
   if (definition.catalogKind !== 'converter') {
     const options = definition.outputs.map(field => ({ field, payload: outputConversionPayload(result.outputs[field.id], definition.title, field.label) })).filter(item => item.payload);
@@ -1286,6 +1303,7 @@ function initConverterDirectory() {
       const item = node('li');
       const link = node('a', '', definition.title);
       link.href = definition.href || calculatorPath(definition.id);
+      attachConversionQuery(link, definition, search.value);
       item.append(link); groups.get(category).append(item);
     }
     if (related.length) {
@@ -1328,18 +1346,23 @@ function renderHistory() {
     list.append(searchLabel, searchStatus);
     const entries = [];
     for (const record of records) {
+      const usable = historyRecordUsable(record);
       const entry = node('article', 'history-entry');
       const top = node('div', 'history-entry-top');
       top.append(node('strong', '', record.calculatorTitle || record.calculatorId || 'Calculation'));
       const date = new Date(record.calculatedAt);
       top.append(node('small', '', Number.isFinite(date.getTime()) ? date.toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' }) : 'Saved result'));
-      entry.append(top, node('p', 'history-entry-summary', formatHistorySummary(record)));
+      let summary = 'This saved entry is incomplete or uses an unavailable unit. It has been kept unchanged.';
+      if (usable) { try { summary = formatHistorySummary(record); } catch { summary = 'Saved result from an older tool version.'; } }
+      entry.append(top, node('p', 'history-entry-summary', summary));
       const actions = node('div', 'history-entry-actions');
       const view = node('button', 'button button-secondary', 'View saved result');
       view.type = 'button';
+      view.disabled = !usable;
       view.addEventListener('click', () => showHistoryRecord(record));
       const restore = node('button', 'button button-quiet', 'Restore inputs');
       restore.type = 'button';
+      restore.disabled = !usable;
       restore.addEventListener('click', () => restoreHistoryRecord(record));
       const remove = node('button', 'button button-quiet', 'Delete');
       remove.type = 'button';
@@ -1419,7 +1442,7 @@ function restoreHistoryRecord(record) {
     sessionStorage.setItem('nexora.restore.v1', JSON.stringify(payload));
     recordDialog?.close();
     historyDialog?.close();
-    location.href = record.route || (record.kind === 'unit-conversion' ? '/converters/' : calculatorPath(record.calculatorId));
+    location.href = historyRecordRoute(record);
   } catch {
     showToast('The browser could not restore these inputs. The original saved result is still available.');
   }

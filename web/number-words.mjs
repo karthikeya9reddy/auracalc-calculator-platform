@@ -45,6 +45,8 @@ function integerToWords(integer) {
 export function numberToEnglishWords(value) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return null;
   const absolute = Math.abs(value);
+  // Do not describe a nonzero scientific result as "zero" after display rounding.
+  if (absolute > 0 && absolute < 0.000001) return null;
   const roundedText = new Intl.NumberFormat('en-US', {
     useGrouping: false,
     maximumFractionDigits: 6,

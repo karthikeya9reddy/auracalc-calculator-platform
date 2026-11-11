@@ -153,6 +153,9 @@ function validateFields(fields, fieldKind) {
     if (field.unitLabel !== undefined && (typeof field.unitLabel !== 'string' || !field.unitLabel.trim())) {
       throw new CalculationError('INVALID_UNIT_LABEL', `${fieldKind} unit label must be non-empty text.`, { fieldId: field.id });
     }
+    if (field.semanticType !== undefined && (typeof field.semanticType !== 'string' || !STABLE_ID.test(field.semanticType))) {
+      throw new CalculationError('INVALID_SEMANTIC_TYPE', 'Quantity semantic types must be stable identifiers.', { fieldId: field.id });
+    }
     if (field.workflowFrom !== undefined && (!Array.isArray(field.workflowFrom)
       || field.workflowFrom.some(source => typeof source !== 'string' || !WORKFLOW_SOURCE_ID.test(source)))) {
       throw new CalculationError('INVALID_WORKFLOW_SOURCES', 'Workflow source allowlists must be arrays of calculator.output identifiers.', { fieldId: field.id });

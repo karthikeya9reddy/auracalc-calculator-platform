@@ -49,14 +49,16 @@ The checks use Node’s built-in test runner. Lenis is bundled locally for smoot
 ## What works in this stage
 
 - AuraCalc's Emergent-inspired dark visual system with eased Lenis wheel scrolling, reduced-motion-aware reveals, pointer-responsive card tilt, animated hero, search-first catalog, favorites, and responsive navigation
-- A catalog of 299 published formula calculators, 3,038 separately counted unit-conversion pages, and a currency converter
+- A catalog of 301 published formula calculators, 3,038 separately counted unit-conversion pages, and a currency converter
 - Unit conversion across the current curated physical-unit registry, with dimensional and temperature-role checks
-- A currency converter using dated Frankfurter reference rates, with refresh and device-local history. It requires an internet connection; the rate date can precede today and the result excludes transaction fees.
+- A currency converter using dated Frankfurter reference rates, with refresh and device-local history. Repeated requests share a bounded in-memory quote cache; outages explicitly mark a recent fallback as stale. It requires an internet connection; the rate date can precede today and the result excludes transaction fees.
 - A personal arithmetic formula builder with locally saved definitions. Personal formulas are not part of the public catalog and do not check physical units.
 - Typed, dimension-checked area-to-volume handoff with formula-version provenance
 - Localized numeric input/display options, responsive layout, dark theme, keyboard search shortcut, and reduced-motion styling
 - Device-local result history with view, restore, delete, pause, and clear controls
-- Readable text result reports, local feedback capture/export, generated calculator information pages, and a static build
+- Readable print/Save as PDF reports and text downloads containing inputs, recorded method steps, results, precision notes and sources; local feedback capture/export, generated calculator information pages, and a static build
+- Shared search with bounded typo tolerance, selected natural-language intents, and exact conversion-quantity prefill such as `500 N to lbf`. Prefilled values remain editable and require Calculate.
+- Scientific display for tiny nonzero and very large results, malformed-history isolation, and stricter range/semantic checks on connected calculations
 - A consent-gated advertising adapter interface; no ad provider is connected
 
 ## Boundaries
@@ -81,5 +83,6 @@ The checks use Node’s built-in test runner. Lenis is bundled locally for smoot
 - `calculation-assurance-policy.md` — source, verification, risk, and release requirements
 - `baseline-engineering-report.md` — original workspace audit and implementation-stage records
 - `deployment-and-maintenance.md` — provider-neutral static deployment and monthly maintenance guide
+- `TITAN_RECONSTRUCTION.md` — latest change record, verification evidence, measured search performance and unresolved release gates
 
 Keep `sources/` read-only. Read the assurance policy before adding a calculator.

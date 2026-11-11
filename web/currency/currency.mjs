@@ -1,5 +1,6 @@
 import { parseLocalizedNumber } from '/src/calculation-core/index.mjs';
-import { fetchCurrencyList, fetchCurrencyRate, convertCurrency, currencyHistoryRecord } from '../currency-core.mjs';
+import { fetchCurrencyList, createRateCache, convertCurrency, currencyHistoryRecord } from '../currency-core.mjs';
+import { formatResultNumber } from '../result-number.mjs';
 import { saveHistoryRecord } from '../storage.mjs';
 
 const $ = selector => document.querySelector(selector);
@@ -10,6 +11,7 @@ let locale = 'en-US';
 try { const stored = localStorage.getItem('nexora.locale.v1'); if (supportedLocales.has(stored)) locale = stored; } catch {}
 let generation = 0;
 let latestConversion = null;
+const getRate = createRateCache();
 const fallback = ['USD', 'INR', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'SGD'].map(code => ({ code, name: code }));
 function setOptions(currencies) {
   for (const [select, fallbackValue] of [[from, 'USD'], [to, 'INR']]) {
@@ -20,7 +22,7 @@ function setOptions(currencies) {
     select.value = options.some(item => item.code === selected) ? selected : options[0]?.code || '';
   }
 }
-async function updateRate() {
+async function updateRate(refresh = false) {
   const token = ++generation;
   saveStatus.textContent = '';
   latestConversion = null; $('#currency-save').disabled = true;
@@ -31,14 +33,14 @@ async function updateRate() {
   if (!from.value || !to.value) { status.textContent = 'Choose both currencies.'; return; }
   status.textContent = 'Fetching the latest available reference rate…';
   try {
-    const quote = await fetchCurrencyRate(from.value, to.value);
+    const quote = await getRate(from.value, to.value, { refresh: refresh === true });
     if (token !== generation) return;
     const converted = convertCurrency(numeric, quote.rate);
-    const formatted = new Intl.NumberFormat(locale, { maximumFractionDigits: 6 }).format(converted);
+    const formatted = formatResultNumber(converted, locale);
     result.textContent = `${formatted} ${quote.quote}`;
     latestConversion = { amount: numeric, quote, converted };
     $('#currency-save').disabled = false;
-    status.textContent = quote.sameCurrency ? 'Same currency: the exchange rate is 1.' : `1 ${quote.base} = ${new Intl.NumberFormat(locale, { maximumSignificantDigits: 10 }).format(quote.rate)} ${quote.quote} · Rate date: ${quote.date} · Checked: ${new Date().toLocaleString(locale)}.`;
+    status.textContent = quote.sameCurrency ? 'Same currency: the exchange rate is 1.' : `${quote.stale ? 'Could not refresh. Showing a previously fetched rate — retry before relying on it. ' : ''}1 ${quote.base} = ${new Intl.NumberFormat(locale, { maximumSignificantDigits: 10 }).format(quote.rate)} ${quote.quote} · Rate date: ${quote.date} · Checked: ${new Date(quote.checkedAt).toLocaleString(locale)}${quote.cached ? ' (cached)' : ''}.`;
   } catch { if (token === generation) status.textContent = 'The rate is unavailable. Check your connection or choose another currency pair, then retry.'; }
 }
 let carried = null;
@@ -56,7 +58,7 @@ if (carried && /^[A-Z]{3}$/.test(carried.currency || '') && Number.isFinite(carr
   $('#currency-origin').hidden = false;
 }
 $('#currency-form').addEventListener('submit', event => { event.preventDefault(); updateRate(); });
-$('#currency-refresh').addEventListener('click', updateRate);
+$('#currency-refresh').addEventListener('click', () => updateRate(true));
 $('#currency-save').addEventListener('click', () => {
   if (!latestConversion) return;
   const { amount: value, quote, converted } = latestConversion;

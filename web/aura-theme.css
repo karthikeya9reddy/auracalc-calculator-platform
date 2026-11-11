@@ -923,3 +923,32 @@ body[data-theme="dark"] .button-primary:hover { color:#050508; background:#caff6
 #historyDialog .history-search-status { margin:0; color:#b8c9bb; font-size:12px; }
 #historyDialog .history-entry[hidden] { display:none; }
 .currency-save-status { margin:10px 0 0; color:#c5e4c9; font-size:13px; line-height:1.4; }
+
+/* Shared instrument workspace: readable inputs, stable results, quiet secondary actions. */
+:root { --instrument-surface:#101916; --instrument-border:#35483e; --instrument-muted:#b9c9bf; --instrument-radius:18px; }
+.calculator-runtime { align-items:start; gap:24px; }
+.calculator-form-card,.result-card { min-width:0; border:1px solid var(--instrument-border); border-radius:var(--instrument-radius); padding:clamp(20px,2.6vw,32px); background:linear-gradient(145deg,#131e18,#0d1411); box-shadow:0 12px 40px #0002; }
+.runtime-card-heading h2 { color:#f1f8f3; font-size:21px; letter-spacing:-.025em; }
+.runtime-card-heading p,.field-help { color:var(--instrument-muted); font:13px/1.65 'Space Grotesk',sans-serif; text-transform:none; letter-spacing:0; }
+.quantity-control { gap:9px; margin-bottom:8px; }
+.quantity-control label { color:#e4eee7; font-size:14px; line-height:1.5; }
+.quantity-control input,.quantity-control select { min-height:48px; font-size:16px; border-radius:10px; border-color:#3b5143; background:#080f0b; color:#f1f8f3; }
+.quantity-unit-label { overflow-wrap:anywhere; white-space:normal; min-height:48px; border-radius:10px; font-size:13px; }
+.result-main { padding-block:18px; border-bottom:1px solid var(--instrument-border); min-width:0; }
+.result-main-label { color:#bbd2c3; font-size:13px; letter-spacing:.03em; line-height:1.5; }
+.result-main strong { color:#d3ffa4; font-size:clamp(26px,3vw,38px); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.result-in-words { font-size:13px; line-height:1.6; color:#b8c9be; }
+.result-actions { display:flex; gap:8px; flex-wrap:wrap; padding-block:18px; margin:0 0 8px; border-bottom:1px solid var(--instrument-border); }
+.result-actions .button { min-height:42px; font-size:13px; border-radius:999px; padding:10px 15px; }
+.result-actions .button-quiet { border-color:transparent; background:transparent; color:#c5d5cb; }
+.result-actions .button-quiet:hover { border-color:#536c5b; background:#1b2c21; color:#f2fff5; }
+.form-actions .button-primary { border-radius:999px; padding-inline:24px; box-shadow:0 5px 16px #b8ff3d12; }
+.form-actions .button-quiet { border-radius:999px; }
+.smart-next-steps { border-radius:14px; border:1px solid #394d35; background:#141e13; padding:20px; }
+.handoff-button { border-radius:12px; background:#0b130d; }
+.handoff-copy strong { font-size:15px; line-height:1.4; color:#ebf7ed; }
+.handoff-copy small { font-size:13px; color:#bdcec0; }
+.result-details summary { padding-block:16px; color:#d2e8d9; font-size:14px; }
+.button:focus-visible { outline:2px solid #70e8ff; outline-offset:4px; }
+.button:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+@media(max-width:680px) { .calculator-runtime { gap:16px; }.quantity-control { grid-template-columns:minmax(0,1fr) minmax(96px,32%); }.result-actions .button { flex:1 1 auto; }.smart-next-steps { padding:16px; } }
