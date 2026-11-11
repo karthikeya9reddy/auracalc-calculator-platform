@@ -1,4 +1,4 @@
 import { generateCalculatorPages } from './generate-pages-lib.mjs';
 
-const count = await generateCalculatorPages();
-console.log(`Generated ${count} calculator information pages.`);
+const generated = await generateCalculatorPages();
+console.log(`Generated ${generated.calculators} formula calculator pages and ${generated.converters} converter pages.`);

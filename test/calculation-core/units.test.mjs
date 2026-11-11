@@ -1,11 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { convertValue, getUnit, listUnits, UNIT_REGISTRY_VERSION } from '../../src/calculation-core/index.mjs';
+import { BASE_DIMENSIONS, convertValue, divideDimensions, getUnit, listUnits, multiplyDimensions, powerDimension, UNIT_REGISTRY_VERSION } from '../../src/calculation-core/index.mjs';
 
 test('the unit registry is versioned and exposes immutable definitions', () => {
-  assert.equal(UNIT_REGISTRY_VERSION, 'si-core-3');
+  assert.equal(UNIT_REGISTRY_VERSION, 'si-core-6');
   assert.ok(listUnits().length >= 40);
   assert.equal(Object.isFrozen(getUnit('m')), true);
+});
+
+test('angular speed is dimensionally separate from cyclic frequency', () => {
+  assert.ok(Math.abs(convertValue(60, 'rpm', 'rad/s') - 2 * Math.PI) < 1e-12);
+  assert.throws(() => convertValue(1, 'rpm', 'Hz'), { code: 'DIMENSION_MISMATCH' });
+  assert.ok(Math.abs(convertValue(1, 'Hz', 'Hz') - 1) < 1e-12);
 });
 
 test('common length, force, and pressure conversions use explicit factors', () => {
@@ -26,6 +32,24 @@ test('engineering and data-size units preserve angular rate, energy, and binary 
   assert.equal(convertValue(1, 'GB', 'B'), 1_000_000_000);
   assert.equal(convertValue(1, 'GiB', 'B'), 2 ** 30);
   assert.ok(Math.abs(convertValue(1, 'TiB', 'GiB') - 1024) < 1e-12);
+});
+
+test('the new derived engineering units carry their physical dimensions and conversion factors', () => {
+  assert.equal(convertValue(1, 'Ah', 'C'), 3600);
+  assert.deepEqual(getUnit('kg/m2').dimension, divideDimensions(getUnit('kg').dimension, powerDimension(BASE_DIMENSIONS.length, 2)));
+  assert.deepEqual(getUnit('H').dimension, multiplyDimensions(getUnit('ohm').dimension, BASE_DIMENSIONS.time));
+  assert.equal(convertValue(1, 'm2/s', 'm2/s'), 1);
+  assert.throws(() => convertValue(1, 'W/m2', 'W/m2K'), { code: 'DIMENSION_MISMATCH' });
+});
+
+test('fourth-power beam units, current density, activity, and apparent power keep explicit dimensions', () => {
+  assert.equal(convertValue(1, 'cm4', 'm4'), 1e-8);
+  assert.equal(convertValue(1, 'mm4', 'm4'), 1e-12);
+  assert.ok(Math.abs(convertValue(1, 'in4', 'm4') - 0.0254 ** 4) < 1e-20);
+  assert.deepEqual(getUnit('A/m2').dimension, divideDimensions(BASE_DIMENSIONS.electricCurrent, powerDimension(BASE_DIMENSIONS.length, 2)));
+  assert.deepEqual(getUnit('Bq').dimension, powerDimension(BASE_DIMENSIONS.time, -1));
+  assert.deepEqual(getUnit('VA').dimension, getUnit('W').dimension);
+  assert.equal(convertValue(1, 'VA', 'W'), 1);
 });
 
 test('absolute temperatures convert with offsets and cannot convert to temperature differences', () => {

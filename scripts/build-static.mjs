@@ -1,17 +1,19 @@
 import { cp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { publicDefinitions } from '../catalog/public/index.mjs';
+import { publicDefinitions, publicConverterDefinitions } from '../catalog/public/index.mjs';
 import { FIELD_DIRECTORY } from '../catalog/field-directory.mjs';
 import { createFieldToolIndex } from '../catalog/field-tool-index.mjs';
 import { fieldRoute } from '../catalog/field-route.mjs';
 import { generateCalculatorPages } from './generate-pages-lib.mjs';
+import { generateMeasurePages } from './generate-measure-pages.mjs';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const outputRoot = resolve(projectRoot, 'dist');
 const markerPath = resolve(outputRoot, '.auracalc-generated-output');
 const legacyMarkerPath = resolve(outputRoot, '.nexora-generated-output');
 await generateCalculatorPages(projectRoot);
+await generateMeasurePages(projectRoot);
 
 try {
   await stat(outputRoot);
@@ -41,16 +43,19 @@ if (publicUrl) {
   }
   const fieldToolMap = createFieldToolIndex(publicDefinitions);
   const indexableFieldRoutes = FIELD_DIRECTORY.filter(field => fieldToolMap.get(field).length > 0).map(fieldRoute);
-  const routes = ['/', '/unit-converter/', '/fields/', ...publicDefinitions.map(definition => `/calculators/${definition.id}/`), ...indexableFieldRoutes];
+  const routes = ['/', '/converters/', '/currency/', '/builder/', '/fields/', '/measure/', '/measure/photo/', '/measure/ar/', '/measure/speed/', ...publicDefinitions.map(definition => `/calculators/${definition.id}/`), ...publicConverterDefinitions.map(definition => `/converters/${definition.id}/`), ...indexableFieldRoutes];
   const entries = routes.map(route => `  <url><loc>${new URL(route, baseUrl).href}</loc></url>`).join('\n');
   await writeFile(resolve(outputRoot, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries}\n</urlset>\n`, 'utf8');
   for (const route of routes) {
     const pageFile = resolve(outputRoot, route.replace(/^\//, ''), route.endsWith('/') ? 'index.html' : 'index.html');
     const pageHtml = await readFile(pageFile, 'utf8');
     const canonical = `<link rel="canonical" href="${new URL(route, baseUrl).href}">`;
-    await writeFile(pageFile, pageHtml.replace('</head>', `  ${canonical}\n</head>`), 'utf8');
+    const canonicalized = /<link rel="canonical" href="[^"]*">/.test(pageHtml)
+      ? pageHtml.replace(/<link rel="canonical" href="[^"]*">/, canonical)
+      : pageHtml.replace('</head>', `  ${canonical}\n</head>`);
+    await writeFile(pageFile, canonicalized, 'utf8');
   }
   await writeFile(resolve(outputRoot, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${new URL('/sitemap.xml', baseUrl).href}\n`, 'utf8');
 }
 
-console.log(`AuraCalc static site built in dist with ${publicDefinitions.length} calculator pages and ${FIELD_DIRECTORY.length} field pages.`);
+console.log(`AuraCalc static site built in dist with ${publicDefinitions.length} formula calculator pages, ${publicConverterDefinitions.length} converter pages, and ${FIELD_DIRECTORY.length} field pages.`);

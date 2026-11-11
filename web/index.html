@@ -30,6 +30,8 @@
       <nav class="nav-links" id="main-navigation" aria-label="Main navigation">
         <a href="#explore">Tools</a>
         <a href="#fields">Fields</a>
+        <a href="/converters/">Converters</a>
+        <a href="/measure/">Measure</a>
         <a href="#workflow">How it works</a>
       </nav>
       <div class="header-actions">
@@ -59,7 +61,7 @@
         </div>
         <div class="hero-orbit" aria-label="Live catalog summary">
           <div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div>
-          <div class="orbit-core"><span class="orbit-glyph" aria-hidden="true">∑</span><span id="hero-tool-count">0</span><small>LIVE TOOLS</small></div>
+          <div class="orbit-core"><span class="orbit-glyph" aria-hidden="true">∑</span><span id="hero-tool-count">0</span><small>FORMULA CALCULATORS</small></div>
           <span class="orbit-number n-one" aria-hidden="true">01</span><span class="orbit-number n-two" aria-hidden="true">%</span><span class="orbit-number n-three" aria-hidden="true">∞</span>
           <span class="orbit-note">48 FIELDS MAPPED</span>
         </div>
@@ -74,23 +76,36 @@
           <p class="section-note">A growing library. A clear method.<br>Room for your next calculation.</p>
         </div>
         <form class="search-bar-wrap" id="calculatorSearchForm" role="search">
-          <svg class="ui-icon" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="21" cy="21" r="12"/><path d="m30 30 10 10"/></svg><label class="sr-only" for="catalog-search">Search calculators and fields</label>
+          <svg class="ui-icon" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="21" cy="21" r="12"/><path d="m30 30 10 10"/></svg><label class="sr-only" for="catalog-search">Search calculators, converters and fields</label>
           <input id="catalog-search" type="search" autocomplete="off" placeholder="What are you trying to figure out?" aria-describedby="search-description">
           <span class="search-count" id="search-count" aria-live="polite">Search all tools</span>
           <button type="button" class="clear-search" id="clear-search" aria-label="Clear search" hidden><svg class="ui-icon" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m12 12 24 24M36 12 12 36"/></svg></button>
         </form>
         <p class="search-description" id="search-description">Search by task, subject, formula, or everyday wording. Press / to jump to search.</p>
         <div class="catalog-controls">
-          <div class="category-row" id="categoryFilters" role="group" aria-label="Filter calculators by subject"></div>
+          <div class="category-row" id="categoryFilters"></div>
           <button class="favorite-filter" id="favorites-filter" type="button" aria-pressed="false"><svg class="ui-icon" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M24 40S7 30 7 18a9 9 0 0 1 17-4 9 9 0 0 1 17 4c0 12-17 22-17 22Z"/></svg> Saved tools</button>
         </div>
         <div class="catalog-grid" id="auraCalculatorGrid" aria-live="polite"></div>
+        <div id="unified-search-additions" class="unified-search-additions" aria-live="polite" hidden></div>
         <div class="catalog-pagination" id="catalog-pagination" hidden>
           <p id="catalog-page-status" aria-live="polite"></p>
           <button class="button button-quiet" id="catalog-load-more" type="button" aria-controls="auraCalculatorGrid">Show more tools</button>
         </div>
         <div class="empty-state" id="empty-state" hidden><span aria-hidden="true">✳</span><p>No live calculator matches that search yet.</p><button class="text-button" id="reset-search" type="button">Clear filters</button></div>
         <p class="catalog-truth"><span class="status-dot"></span><span id="catalog-truth-text">Only released tools are counted as live. The wider directory shows research fields awaiting calculator-specific review.</span></p>
+      </section>
+
+      <section class="converter-section" aria-labelledby="converter-section-title">
+        <div class="converter-section-copy"><p class="eyebrow">A SEPARATE TOOLSET</p><h2 id="converter-section-title">Need a unit conversion?</h2><p>Convert measurements between supported units with dimension checks and a documented reference. Converters stay separate from the formula calculator catalog and its count.</p></div>
+        <a class="converter-section-link" href="/converters/"><span>Open converters</span><span aria-hidden="true">↗</span></a>
+      </section>
+      <section class="converter-section builder-promo" aria-labelledby="builder-promo-title"><div class="converter-section-copy"><p class="eyebrow">MAKE IT YOURS</p><h2 id="builder-promo-title">Create your own calculator.</h2><p>Turn a simple formula into a reusable personal calculator and save it on this device.</p></div><a class="converter-section-link" href="/builder/"><span>Open formula builder</span><span aria-hidden="true">↗</span></a></section>
+
+      <section class="visual-measure-section" aria-labelledby="visual-measure-title" data-scroll-reveal>
+        <div class="visual-measure-mark" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 36 36 8M14 8h22v22M8 14v22h22"/><circle cx="24" cy="24" r="3"/></svg></div>
+        <div class="visual-measure-copy"><p class="eyebrow">A VISUAL WORKSPACE</p><h2 id="visual-measure-title">Explore ways to measure.</h2><p>Use a photo reference, supported AR or your device speedometer. Photo marking stays on your device; optional AI analysis sends your selected image only when you request it.</p></div>
+        <a class="visual-measure-link" href="/measure/"><span>Open Visual Measurement Lab</span><span aria-hidden="true">↗</span></a>
       </section>
 
       <section class="field-section" id="fields" aria-labelledby="fields-title" data-scroll-reveal>

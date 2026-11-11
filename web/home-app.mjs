@@ -1,4 +1,4 @@
-import { listPublicCalculators } from '/catalog/public/index.mjs';
+import { listPublicCalculators, listPublicConverters } from '/catalog/public/index.mjs';
 import { FIELD_DIRECTORY } from '/catalog/field-directory.mjs';
 import { createFieldToolIndex } from '/catalog/field-tool-index.mjs';
 import { fieldRoute } from '/catalog/field-route.mjs';
@@ -12,9 +12,25 @@ import { saveHistoryRecord } from './storage.mjs';
 import { configureNumericInput } from './numeric-input.mjs';
 import { numberToEnglishWords } from './number-words.mjs';
 import { renderCalculationVisual } from './visual-system.mjs';
-import { recommendNextSteps } from './next-step-engine.mjs';
+import { compatibleNextSteps, recommendNextSteps } from './next-step-engine.mjs';
+import { InputAssistant } from './input-assistant.mjs';
+import { catalogTopics } from './catalog-topics.mjs';
+import { makeSearchIndex, searchIndex, searchTokens, matchesSearchText } from './unified-search.mjs';
+import { MEASUREMENT_TOOLS } from './measurement-search.mjs';
 
 const calculators = listPublicCalculators();
+const converters = listPublicConverters();
+const converterSearchIndex = makeSearchIndex(converters);
+const measurementSearchIndex = makeSearchIndex(MEASUREMENT_TOOLS);
+const inputAssistant = new InputAssistant({
+  calculators,
+  converters,
+  getLocale: () => locale,
+  getCurrencyCode: () => {
+    try { return localStorage.getItem('auracalc.currency.v1') || ({ 'en-IN': 'INR', 'en-GB': 'GBP', 'de-DE': 'EUR', 'fr-FR': 'EUR' })[navigator.language] || 'USD'; }
+    catch { return 'USD'; }
+  },
+});
 const calculatorById = new Map(calculators.map(definition => [definition.id, definition]));
 const fieldToolMap = createFieldToolIndex(calculators);
 const localeSelect = document.querySelector('#localeSelect');
@@ -133,13 +149,14 @@ function calculatorPath(id) {
 
 function matchesQuery(definition, query) {
   if (!query) return true;
+  if (!searchTokens(query).length) return !/convert|conversion/i.test(query);
   const text = normalize([
     definition.title, definition.id, definition.discipline, definition.category,
     definition.description, definition.purpose, definition.method.description,
     ...(definition.fields || []),
     ...(definition.keywords || []),
   ].join(' '));
-  return normalize(query).split(/\s+/).every(token => text.includes(token));
+  return matchesSearchText(text, query);
 }
 
 function matchingCalculators() {
@@ -153,19 +170,41 @@ function matchingCalculators() {
 function renderCategories() {
   const container = document.querySelector('#categoryFilters');
   if (!container) return;
-  const categories = ['All tools', ...new Set(calculators.map(item => item.category))];
+  const { all, featured, counts } = catalogTopics(calculators, activeCategory);
   container.replaceChildren();
-  for (const category of categories) {
-    const button = node('button', `category${activeCategory === category ? ' active' : ''}`, category);
-    button.type = 'button';
+  const label = node('span', 'catalog-category-label', 'Browse by topic');
+  container.append(label);
+  const makeTopic = category => {
+    const button = node('button', `category topic-chip${activeCategory === category ? ' active' : ''}`, category);
+    button.type = 'button'; button.dataset.topic = category;
     button.setAttribute('aria-pressed', String(activeCategory === category));
     button.addEventListener('click', () => {
-      activeCategory = category;
-      catalogVisibleLimit = CATALOG_PAGE_SIZE;
-      renderCatalog();
+      activeCategory = category; catalogVisibleLimit = CATALOG_PAGE_SIZE; renderCatalog();
+      [...document.querySelectorAll('#categoryFilters .topic-chip')].find(item => item.dataset.topic === category)?.focus();
     });
-    container.append(button);
-  }
+    return button;
+  };
+  const featuredRow = node('div', 'topic-featured');
+  for (const category of ['All tools', ...featured]) featuredRow.append(makeTopic(category));
+  container.append(featuredRow);
+  const fields = node('a', 'catalog-fields-link', 'Browse all fields ↗');
+  fields.href = '/fields/';
+  const details = node('details', 'topic-disclosure');
+  const summary = node('summary', 'topic-summary', `More topics · ${all.length}`);
+  const panel = node('div', 'topic-panel');
+  const searchLabel = node('label', 'topic-search-label', 'Find a topic'); searchLabel.htmlFor = 'topic-search';
+  const search = node('input', 'topic-search'); search.id = 'topic-search'; search.type = 'search'; search.placeholder = 'Search topics, e.g. gears or chemistry'; search.autocomplete = 'off';
+  const list = node('div', 'topic-list');
+  const result = node('p', 'topic-result'); result.setAttribute('role', 'status');
+  const filter = () => {
+    const matching = all.filter(category => matchesSearchText(category, search.value));
+    list.replaceChildren();
+    for (const category of matching) { const chip = makeTopic(category); chip.title = `${counts.get(category)} calculators`; list.append(chip); }
+    result.textContent = matching.length ? `${matching.length} ${matching.length === 1 ? 'topic' : 'topics'}` : 'No topics found. Try another word.';
+  };
+  search.addEventListener('input', filter);
+  details.addEventListener('toggle', () => { if (details.open && !list.childElementCount) filter(); });
+  panel.append(searchLabel, search, result, list, fields); details.append(summary, panel); container.append(details);
 }
 
 function renderCatalog() {
@@ -173,6 +212,37 @@ function renderCatalog() {
   if (!grid) return;
   renderCategories();
   const items = matchingCalculators();
+  const additions = document.querySelector('#unified-search-additions');
+  let extraMatches = 0;
+  if (additions) {
+    additions.replaceChildren();
+    const query = activeQuery.trim();
+    additions.hidden = !query || favoritesOnly;
+    if (query && !favoritesOnly) {
+      const matchingFields = FIELD_DIRECTORY.filter(field => searchTokens(query).length && matchesSearchText(field, query)).slice(0, 6);
+      const matchingConversions = searchIndex(converterSearchIndex, query, 8);
+      const matchingMeasurements = searchIndex(measurementSearchIndex, query, 3);
+      const currencyMatch = /currency|exchange|forex|\b(?:usd|eur|inr|gbp|jpy|dollar|rupee|euro|yen)\b/i.test(query);
+      const builderMatch = /builder|build (?:a |my |your )?calculator|custom (?:formula|calculator)|create (?:a |my |your )?calculator/i.test(query);
+      if (matchingMeasurements.length) { const section = node('section', 'search-result-group'); section.append(node('h3', '', 'Measurement tools')); const links = node('div', 'search-result-links'); for (const tool of matchingMeasurements) { const link = node('a', '', tool.title); link.href = tool.href; links.append(link); } section.append(links); additions.append(section); extraMatches += matchingMeasurements.length; }
+      if (builderMatch) { const section = node('section', 'search-result-group'); section.append(node('h3', '', 'Build your own')); const links = node('div', 'search-result-links'); const link = node('a', '', 'Personal formula builder'); link.href = '/builder/'; links.append(link); section.append(links); additions.append(section); extraMatches++; }
+      if (matchingFields.length) {
+        const section = node('section', 'search-result-group'); section.append(node('h3', '', 'Fields'));
+        const links = node('div', 'search-result-links');
+        for (const field of matchingFields) { const link = node('a', '', field); link.href = fieldRoute(field); links.append(link); }
+        section.append(links); additions.append(section); extraMatches += matchingFields.length;
+      }
+      if (matchingConversions.length || currencyMatch || /convert|conversion/i.test(query)) {
+        const section = node('section', 'search-result-group'); section.append(node('h3', '', 'Converters'));
+        const links = node('div', 'search-result-links');
+        if (currencyMatch) { const currency = node('a', '', 'Currency exchange rates'); currency.href = '/currency/'; links.append(currency); extraMatches++; }
+        for (const conversion of matchingConversions) { const link = node('a', '', conversion.title); link.href = `/converters/${encodeURIComponent(conversion.id)}/`; links.append(link); }
+        const all = node('a', 'search-all-converters', 'Browse all converters ↗'); all.href = '/converters/'; links.append(all);
+        section.append(links); additions.append(section); extraMatches += matchingConversions.length + 1;
+      }
+      additions.hidden = !additions.childElementCount;
+    }
+  }
   const visibleItems = items.slice(0, catalogVisibleLimit);
   if (revealObserver) grid.querySelectorAll('[data-scroll-reveal]').forEach(item => revealObserver.unobserve(item));
   grid.replaceChildren();
@@ -180,11 +250,11 @@ function renderCatalog() {
     const wrapper = node('div', 'card-shell reveal-card');
     wrapper.dataset.scrollReveal = '';
     wrapper.style.setProperty('--reveal-delay', `${Math.min(index, 8) * 55}ms`);
-    const card = node('button', `calc-card accent-${accentById[definition.id] || 'lime'}`);
-    card.type = 'button';
+    const card = node('a', `calc-card accent-${accentById[definition.id] || 'lime'}`);
+    card.href = calculatorPath(definition.id);
+    card.setAttribute('aria-label', `Open ${definition.title} calculator`);
     card.style.setProperty('--card-hover-rotation', definition.id === 'compound-interest' ? '-1deg' : '1deg');
     card.setAttribute('data-testid', `calculator-card-${definition.id}`);
-    card.setAttribute('aria-label', `Open ${definition.title} calculator`);
 
     const top = node('span', 'card-top');
     top.append(node('span', 'card-tag', `${definition.riskClass} · ${definition.category}`));
@@ -198,8 +268,6 @@ function renderCatalog() {
     const footer = node('span', 'card-footer');
     footer.append(node('span', '', `${definition.inputs.length} inputs · source linked`), node('span', '', 'Open calculator →'));
     card.append(top, symbol, name, description, footer);
-    card.addEventListener('click', () => openCalculator(definition));
-
     const isFavorite = favorites.includes(definition.id);
     const favorite = node('button', `card-favorite${isFavorite ? ' liked' : ''}`);
     favorite.type = 'button';
@@ -226,11 +294,11 @@ function renderCatalog() {
   }
   const count = document.querySelector('#search-count');
   if (count) count.textContent = activeQuery || favoritesOnly || activeCategory !== 'All tools'
-    ? `${items.length} ${items.length === 1 ? 'match' : 'matches'}`
-    : `${calculators.length} live ${calculators.length === 1 ? 'tool' : 'tools'}`;
+    ? `${items.length} ${items.length === 1 ? 'calculator' : 'calculators'}${extraMatches ? ` · ${extraMatches} more suggestions` : ''}`
+    : `${calculators.length} live formula ${calculators.length === 1 ? 'calculator' : 'calculators'}`;
   const empty = document.querySelector('#empty-state');
   if (empty) {
-    empty.hidden = items.length > 0;
+    empty.hidden = items.length > 0 || extraMatches > 0;
     const message = empty.querySelector('p');
     if (message) message.textContent = 'No live calculator matches that search yet.';
   }
@@ -246,11 +314,11 @@ function renderCatalog() {
   const toolCount = document.querySelector('#hero-tool-count');
   if (toolCount) toolCount.textContent = formatNumber(calculators.length, { maximumFractionDigits: 0 });
   const liveStatus = document.querySelector('#hero-catalog-status');
-  if (liveStatus) liveStatus.textContent = `${calculators.length} live calculators · ${FIELD_DIRECTORY.length} research fields mapped`;
+  if (liveStatus) liveStatus.textContent = `${calculators.length} live formula calculators · ${FIELD_DIRECTORY.length} research fields mapped`;
   const catalogLabel = document.querySelector('#catalog-live-label');
-  if (catalogLabel) catalogLabel.textContent = `${calculators.length} LIVE TOOLS`;
+  if (catalogLabel) catalogLabel.textContent = `${calculators.length} LIVE FORMULA CALCULATORS`;
   const truth = document.querySelector('#catalog-truth-text');
-  if (truth) truth.textContent = `${calculators.length} calculators are currently in the live catalog. The 48-field directory is research scope, not a count of finished tools.`;
+  if (truth) truth.textContent = `${calculators.length} formula-based calculators are currently in the live catalog. Unit converters are listed separately and are not included in this count.`;
 }
 
 function setupScrollReveals() {
@@ -332,7 +400,7 @@ function renderFields() {
     const linkedTools = fieldToolMap.get(name) || [];
     const toolWords = linkedTools.map(definition => `${definition.title} ${definition.description} ${(definition.keywords || []).join(' ')}`).join(' ');
     const text = normalize(`${name} ${toolWords}`);
-    return !query || text.includes(query) || query.split(/\s+/).every(token => text.includes(token));
+    return !query || matchesSearchText(text, query);
   });
   const shown = activeQuery || showAllFields ? visibleFields : visibleFields.filter(name => fieldHighlights.includes(name));
   grid.replaceChildren();
@@ -381,12 +449,15 @@ function openCalculator(definition) {
   fields.replaceChildren();
   for (const field of definition.inputs) {
     const fieldLabel = field.required === false ? `${field.label} (optional)` : field.label;
-    const wrap = node('label', '', fieldLabel);
+    const wrap = node('div', 'tool-input-field');
+    const label = node('label', '', fieldLabel);
     const controls = node('span', 'field-unit');
     const input = configureNumericInput(node('input'), { allowMagnitudeWords: field.allowMagnitudeWords === true });
+    input.id = `tool-input-${definition.id}-${field.id}`;
     input.name = field.id;
     input.required = field.required !== false;
     input.setAttribute('aria-label', fieldLabel);
+    label.htmlFor = input.id;
     input.setAttribute('data-testid', `input-${field.id}`);
     input.placeholder = `Enter ${field.label.toLocaleLowerCase(locale)}`;
     let unit;
@@ -407,7 +478,7 @@ function openCalculator(definition) {
     controls.append(input);
     if (field.unitLabel || field.acceptedUnits.length > 1) controls.append(unit);
     else unit.hidden = true;
-    wrap.append(controls);
+    wrap.append(label, controls);
     const rangeUnit = field.unitLabel || getUnit(field.range?.unit || field.canonicalUnit).symbol;
     const hints = [];
     if (field.required === false) hints.push('Optional — leave blank if this is the value you want to solve for');
@@ -417,6 +488,7 @@ function openCalculator(definition) {
     if (field.allowMagnitudeWords) hints.push('Scale words: thousand, million, billion, trillion, lakh, crore (or 5k)');
     const hint = hints.join(' · ') || `Canonical unit: ${getUnit(field.canonicalUnit).symbol}`;
     wrap.append(node('small', 'field-help', hint));
+    wrap.append(inputAssistant.createHelpButton(form, definition, field, { path: [definition.id] }));
     fields.append(wrap);
   }
   form.reset();
@@ -512,18 +584,15 @@ function renderResult(definition, rawInputs, result, container) {
   }
   const visual = renderCalculationVisual(definition, result, locale);
   if (visual) container.append(visual);
-  const recommendations = recommendNextSteps(definition, result, calculators);
+  const allOptions = compatibleNextSteps(definition, result, calculators);
+  const recommendations = recommendNextSteps(definition, result, calculators, allOptions);
   if (recommendations.length) {
     const nextSteps = node('section', 'smart-next-steps');
     nextSteps.setAttribute('aria-label', 'Suggested next calculations');
     nextSteps.append(node('span', 'eyebrow', 'SMART NEXT STEP'), node('h3', '', 'Continue with this result'));
-    for (const suggestion of recommendations) {
-      const button = node('button', 'smart-next-step-button');
-      button.type = 'button';
-      button.append(node('strong', '', suggestion.targetDefinition.title), node('span', '', suggestion.reason));
-      button.addEventListener('click', () => continueRecommendedWorkflow(definition, rawInputs, result, suggestion));
-      nextSteps.append(button);
-    }
+    for (const suggestion of recommendations) nextSteps.append(makeSuggestedStep(definition, rawInputs, result, suggestion));
+    const visibleCompatibleCount = recommendations.filter(option => option.handoff).length;
+    if (allOptions.length > visibleCompatibleCount) nextSteps.append(makeHandoffChooser(definition, rawInputs, result, allOptions));
     container.append(nextSteps);
   }
   const details = node('div', 'tool-result-details');
@@ -558,6 +627,65 @@ function renderResult(definition, rawInputs, result, container) {
   actions.append(save, methodButton);
   container.append(actions);
   container.append(details);
+}
+
+function makeSuggestedStep(definition, rawInputs, result, suggestion) {
+  const button = node('button', 'smart-next-step-button');
+  button.type = 'button';
+  button.append(node('strong', '', suggestion.handoff ? suggestion.targetDefinition.title : `Explore ${suggestion.targetDefinition.title}`), node('span', '', suggestion.handoff ? `${suggestion.reason} “${suggestion.inputField.label}” will be prefilled and remain editable.` : `${suggestion.reason} This is an optional related tool, with no automatic value transfer.`));
+  button.addEventListener('click', () => {
+    if (suggestion.handoff) continueRecommendedWorkflow(definition, rawInputs, result, suggestion);
+    else location.href = calculatorPath(suggestion.targetDefinition.id);
+  });
+  return button;
+}
+
+function makeHandoffChooser(definition, rawInputs, result, options) {
+  const details = node('details', 'handoff-chooser');
+  details.append(node('summary', '', `Choose from ${options.length} compatible next steps`));
+  const content = node('div', 'handoff-chooser-content');
+  content.append(node('p', '', 'Choose a calculator and input that fit your next question. The selected result will be carried into that input, where you can review or change it.'));
+  const search = node('input', 'handoff-search');
+  search.type = 'search';
+  search.placeholder = 'Filter compatible calculators';
+  search.setAttribute('aria-label', 'Filter compatible calculators');
+  const select = node('select', 'handoff-select');
+  select.setAttribute('aria-label', 'Choose a calculator and input for this result');
+  select.append(new Option('Choose a compatible next step…', ''));
+  const groups = new Map();
+  options.forEach((option, index) => {
+    const category = option.targetDefinition.category || option.targetDefinition.discipline;
+    if (!groups.has(category)) {
+      const group = document.createElement('optgroup');
+      group.label = category;
+      groups.set(category, group);
+      select.append(group);
+    }
+    const element = new Option(`${option.targetDefinition.title} · ${option.inputField.label} ← ${option.outputField.label}`, String(index));
+    element.dataset.search = `${option.targetDefinition.title} ${option.targetDefinition.discipline} ${option.targetDefinition.fields.join(' ')} ${option.inputField.label} ${option.outputField.label}`.toLowerCase();
+    groups.get(category).append(element);
+  });
+  const reason = node('p', 'handoff-selected-reason', 'Choose a step to see why it may help.');
+  const carry = node('button', 'button button-primary handoff-carry', 'Use this value →');
+  carry.type = 'button';
+  carry.disabled = true;
+  search.addEventListener('input', () => {
+    const query = search.value.toLowerCase().trim();
+    for (const option of select.querySelectorAll('option[data-search]')) option.hidden = Boolean(query) && !matchesSearchText(option.dataset.search, query);
+    for (const group of select.querySelectorAll('optgroup')) group.hidden = !group.querySelector('option:not([hidden])');
+  });
+  select.addEventListener('change', () => {
+    const option = options[Number(select.value)];
+    carry.disabled = !option;
+    reason.textContent = option ? `${option.reason} The value will fill “${option.inputField.label}” and stay editable.` : 'Choose a step to see why it may help.';
+  });
+  carry.addEventListener('click', () => {
+    const option = options[Number(select.value)];
+    if (option) continueRecommendedWorkflow(definition, rawInputs, result, option);
+  });
+  content.append(search, select, reason, carry);
+  details.append(content);
+  return details;
 }
 
 function detailBlock(title, copy) {
@@ -674,6 +802,7 @@ function setupSearch() {
   const form = document.querySelector('#calculatorSearchForm');
   input?.addEventListener('input', () => {
     activeQuery = input.value.trim();
+    activeCategory = 'All tools';
     favoritesOnly = false;
     catalogVisibleLimit = CATALOG_PAGE_SIZE;
     renderCatalog();

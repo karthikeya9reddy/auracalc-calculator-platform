@@ -3,6 +3,7 @@ import { reference, r0Release, sciencePrecision, scienceRounding } from './scien
 /** Shared metadata shape for low-risk, equation-based learning tools. */
 export function educationalDefinition({
   id,
+  catalogKind = 'calculator',
   title,
   discipline,
   fields,
@@ -26,6 +27,7 @@ export function educationalDefinition({
 }) {
   return Object.freeze({
     id,
+    catalogKind,
     version: '1.0.0',
     title,
     discipline,

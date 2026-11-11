@@ -7,12 +7,27 @@ AuraCalc is a responsive, statically deployable calculator website backed by a s
 Install Node.js 20 or newer, open a terminal in this folder, and run:
 
 ```text
-npm run dev
+npm.cmd run dev
 ```
 
 Open `http://127.0.0.1:4173`. Press `Ctrl+C` in the terminal to stop the local server.
 
-The local server only serves this project’s website, catalog, calculation core, and existing prototype. It does not provide an API or transmit calculation inputs.
+The local server serves this project and an optional local-only photo analysis endpoint. Ordinary calculations remain local. When explicitly requested, AI photo analysis sends the selected image and question to OpenAI. The endpoint is limited to same-origin requests from the local computer and does not log image content.
+
+### Enable photo AI locally
+
+Set `OPENAI_API_KEY` as a server-side environment variable, then restart `npm run dev`. The key is never entered into the website or sent to the browser. An OpenAI API account with model access and billing may be required. Do not put the key in source files, commit it, or paste it into chat. The default model is `gpt-4.1-mini`; an operator can set `AURACALC_VISION_MODEL` to another compatible model. The optional AI button sends the resized photo and the user's question only when clicked. The model provides measurement guidance; numerical measurements still use the user-selected reference and calculation engine. The API request sets `store: false`; provider data handling remains subject to OpenAI's policy.
+
+In PowerShell, in this project folder, use the following to enter the key without echoing it on screen. The key is available only to processes started from this terminal session:
+
+```powershell
+$auraSecret = Read-Host 'OpenAI API key' -AsSecureString
+$env:OPENAI_API_KEY = [System.Net.NetworkCredential]::new('', $auraSecret).Password
+Remove-Variable auraSecret
+npm.cmd run dev
+```
+
+The static build has no AI server. Public deployment requires a separately engineered authenticated backend, rate limits, cost controls, and privacy policy; do not expose the local endpoint to the internet. Live AR needs HTTPS (or localhost), browser support for immersive AR, hit testing and DOM overlays, and camera permission. It estimates the distance between two user-selected tracked surface points and has not been validated on physical devices.
 
 ## Build a static deployment bundle
 
@@ -34,21 +49,23 @@ The checks use Node’s built-in test runner. Lenis is bundled locally for smoot
 ## What works in this stage
 
 - AuraCalc's Emergent-inspired dark visual system with eased Lenis wheel scrolling, reduced-motion-aware reveals, pointer-responsive card tilt, animated hero, search-first catalog, favorites, and responsive navigation
-- Four published R0 starter definitions: percentage change, rectangle area/perimeter, rectangular-prism volume, and average speed
+- A catalog of 299 published formula calculators, 3,038 separately counted unit-conversion pages, and a currency converter
 - Unit conversion across the current curated physical-unit registry, with dimensional and temperature-role checks
+- A currency converter using dated Frankfurter reference rates, with refresh and device-local history. It requires an internet connection; the rate date can precede today and the result excludes transaction fees.
+- A personal arithmetic formula builder with locally saved definitions. Personal formulas are not part of the public catalog and do not check physical units.
 - Typed, dimension-checked area-to-volume handoff with formula-version provenance
 - Localized numeric input/display options, responsive layout, dark theme, keyboard search shortcut, and reduced-motion styling
 - Device-local result history with view, restore, delete, pause, and clear controls
-- JSON result export, local feedback capture/export, generated calculator information pages, and a static build
+- Readable text result reports, local feedback capture/export, generated calculator information pages, and a static build
 - A consent-gated advertising adapter interface; no ad provider is connected
 
 ## Boundaries
 
-- The four catalog methods are limited to general, low-risk educational or household use. They do not approve structural, vehicle-safety, medical, tax, or other consequential decisions.
+- Catalog methods are limited to their documented educational and estimate scopes. They do not approve structural, vehicle-safety, medical, tax, or other consequential decisions.
 - Medical, finance, mining safety, code-based engineering, and similar high-consequence calculators require their own source, jurisdiction, qualified review, and release evidence before publication.
 - Starter release records show developer self-review and executable reference cases; no independent domain review is recorded. “Published” here means included in this local product catalog, not deployed publicly.
 - The unit registry and locale support are curated subsets, not exhaustive global coverage. Precision and rounding metadata do not yet select decimal or arbitrary-precision backends.
-- AI is not connected. Search uses local metadata and synonyms. The camera, AR, and visual interaction remain in `prototype/` and are not production measurement tools.
+- Search uses local metadata and synonyms. Photo AI requires the optional local server configuration. The AR tool requires compatible hardware and is an estimate; automatic object dimensions, depth reconstruction, and camera-based object-speed tracking are not implemented.
 - History and feedback are stored in the current browser profile. Feedback is not transmitted to the project owner. Sensitive values should not be stored on a shared device.
 - The service worker caches the app shell and previously requested same-origin resources. Offline behavior was not verified in a browser.
 - No browser-based visual/device audit, deployment, load test, or scale benchmark has completed. Do not claim production operation or million-user capacity.

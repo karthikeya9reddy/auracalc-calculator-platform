@@ -31,33 +31,60 @@ test('every public calculator is indexed under each declared field and unknown f
 test('future tagged calculators automatically appear in their field list', () => {
   const added = { ...publicDefinitions[0], id: 'future-tool', fields: ['Mining and extractive industries'] };
   const index = createFieldToolIndex([...publicDefinitions, added]);
-  assert.deepEqual(index.get('Mining and extractive industries').map(definition => definition.id), [
-    'ore-grade', 'blended-mineral-grade', 'mineral-process-recovery', 'diluted-mineral-grade', 'chemistry-percent-yield', 'future-tool',
+  assert.deepEqual(index.get('Mining and extractive industries').filter(definition => !definition.id.startsWith('convert-')).map(definition => definition.id), [
+    'ore-grade', 'blended-mineral-grade', 'mineral-process-recovery', 'diluted-mineral-grade', 'chemistry-percent-yield',
+    'metal-recovered-mass', 'mine-strip-ratio', 'mine-waste-tonnage', 'blended-ore-grade-two-streams',
+    'contained-metal-in-ore', 'mineral-product-recovery', 'mineral-slurry-solids-mass-fraction',
+    'water-to-ore-mass-ratio', 'mine-material-throughput', 'haul-truck-fleet-throughput', 'future-tool',
   ]);
 });
 
 test('field pages list the expanded calculators under their matching disciplines', () => {
   const index = createFieldToolIndex(publicDefinitions);
-  assert.deepEqual(index.get('Travel, time, fitness, and sports calculations').map(definition => definition.id), ['average-speed', 'trip-fuel-estimate']);
-  assert.deepEqual(index.get('Transportation and traffic engineering').map(definition => definition.id), ['slope-grade-percent']);
-  assert.deepEqual(index.get('Logistics and supply chain').map(definition => definition.id), ['trip-fuel-estimate']);
-  assert.deepEqual(index.get('Civil engineering').map(definition => definition.id), [
+  const nonConversionIds = field => index.get(field).filter(definition => !definition.id.startsWith('convert-')).map(definition => definition.id);
+  assert.deepEqual(nonConversionIds('Travel, time, fitness, and sports calculations'), ['average-speed', 'trip-fuel-estimate', 'trip-fuel-cost-estimate']);
+  assert.deepEqual(nonConversionIds('Transportation and traffic engineering'), [
+    'slope-grade-percent', 'ideal-braking-distance', 'wheel-tractive-force-from-torque', 'ideal-jet-thrust-from-mass-flow',
+  ]);
+  assert.deepEqual(nonConversionIds('Logistics and supply chain'), [
+    'trip-fuel-estimate', 'economic-order-quantity', 'mine-material-throughput', 'haul-truck-fleet-throughput',
+  ]);
+  assert.deepEqual(nonConversionIds('Civil engineering'), [
     'rectangle-area', 'rectangular-prism-volume', 'circle-area-circumference', 'linear-thermal-expansion',
     'steady-wall-conduction-rate', 'triangle-area', 'trapezoid-area', 'slope-grade-percent',
     'concrete-slab-volume', 'tile-quantity-estimate', 'right-triangle-hypotenuse', 'sphere-volume',
     'cylinder-volume', 'cone-volume',
+    'excavation-volume', 'floor-screed-volume', 'wall-material-volume', 'roof-pitch-percent', 'roof-rafter-length',
+    'aggregate-tonnage-estimate', 'soil-bulk-density', 'cubic-volume-tonnage', 'road-grade-percent', 'concrete-batch-yield',
+    'triangle-angle-cosine-rule', 'triangle-area-heron', 'paving-material-mass-estimate', 'circular-pipe-internal-volume',
+    'annular-cross-section-area', 'trapezoidal-trench-volume', 'earthwork-bulking-volume', 'compacted-fill-dry-mass',
+    'axial-normal-stress', 'engineering-normal-strain', 'elastic-bar-axial-elongation', 'cantilever-end-load-moment',
+    'elastic-beam-bending-stress', 'simply-supported-point-load-reaction', 'simply-supported-center-load-moment',
+    'simply-supported-uniform-load-moment', 'euler-column-critical-load-ideal', 'construction-waste-adjusted-volume',
   ]);
-  assert.deepEqual(index.get('Water resources and hydraulic engineering').map(definition => definition.id), [
+  assert.deepEqual(nonConversionIds('Water resources and hydraulic engineering'), [
     'hydrostatic-gauge-pressure', 'buoyant-force', 'volumetric-flow-rate', 'mass-flow-rate',
-    'pipe-reynolds-number', 'bernoulli-pressure-change', 'hydraulic-pump-input-power',
+    'pipe-reynolds-number', 'bernoulli-pressure-change', 'hydraulic-pump-input-power', 'fluid-head-pressure',
+    'hydraulic-power-output', 'pump-efficiency-estimate', 'rectangular-channel-average-speed', 'wall-thermal-resistance',
+    'convection-heat-transfer-rate', 'sensible-cooling-load', 'thermal-diffusivity', 'tank-fill-time', 'pipe-average-flow-speed',
+    'circular-pipe-internal-volume', 'rain-runoff-volume-with-coefficient', 'hydraulic-cylinder-speed-from-flow',
   ]);
-  assert.deepEqual(index.get('Electrical engineering and power systems').map(definition => definition.id), [
+  assert.deepEqual(nonConversionIds('Electrical engineering and power systems'), [
     'ohms-law', 'dc-electric-power', 'electric-charge-from-current', 'series-resistance-two',
     'parallel-resistance-two', 'unloaded-voltage-divider', 'capacitor-stored-energy', 'capacitor-charge',
-    'photon-energy-from-frequency', 'electrical-energy-power-time',
+    'electrical-energy-power-time', 'battery-energy-watt-hours', 'resistor-power-from-current',
+    'capacitor-reactance', 'inductor-reactance', 'transformer-secondary-voltage', 'balanced-three-phase-power',
+    'led-series-resistor', 'voltage-divider-output', 'charge-from-current-time', 'capacitor-charge-estimate',
+    'angular-frequency-from-hertz', 'rc-circuit-time-constant', 'rl-circuit-time-constant',
+    'rc-capacitor-charging-voltage', 'rc-capacitor-discharge-voltage', 'inductor-stored-energy',
+    'joule-heating-energy', 'electric-current-density', 'power-factor-from-real-power',
+    'balanced-three-phase-apparent-power', 'voltage-regulation-percent',
   ]);
-  assert.deepEqual(index.get('VFX, CGI, animation, and motion design').map(definition => definition.id), [
+  assert.deepEqual(nonConversionIds('VFX, CGI, animation, and motion design'), [
     'frame-duration', 'shutter-exposure', 'ideal-render-farm-time', 'image-sequence-storage', 'compressed-video-size-estimate',
+    'camera-horizontal-field-of-view', 'crop-equivalent-focal-length', 'exposure-value-from-settings',
+    'animation-duration-from-frames', 'render-farm-runtime', 'sequence-frame-count', 'digital-image-aspect-ratio',
+    'screen-pixel-density',
   ]);
 });
 

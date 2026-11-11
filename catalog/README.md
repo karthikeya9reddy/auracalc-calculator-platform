@@ -1,6 +1,19 @@
 # AuraCalc calculator catalog
 
-The current public catalog contains 99 low-risk calculator definitions: the original 34 tools, a 50-calculator expansion, and a 15-calculator advanced mathematics and engineering batch. Newly added topics cover:
+The public formula-calculator catalog currently contains 198 calculators. The separate converter catalog contains 3,038 direction-specific unit converters generated from the versioned unit registry. Converter pages live under `/converters/`; formula calculator pages live under `/calculators/`. Converters are excluded from calculator counts, field coverage, catalog search, and the recursive missing-input helper. The 2,000-plus formula-calculator target is not yet met; the current 198 tools remain the truthful count until more formula-based tools are built and audited.
+
+- Mathematics and statistics: percentage-point differences, ratios, means, standard error, z-scores, coordinate distance, and circular geometry
+- Finance and business: interest estimates, loan payment, loan-to-value, debt-to-income, ROI, profit, commission, customer acquisition cost, and savings goals
+- Civil, construction, and mechanical work: excavation and material volumes, roof geometry, soil and aggregate estimates, belt speed, rotational inertia, braking distance, cylinder force, spring rate, and momentum
+- Fluids, heat transfer, and electrical work: hydrostatic pressure, hydraulic power and efficiency, channel velocity, thermal resistance/diffusivity/load, battery energy, reactance, transformers, three-phase power, LED resistors, and charge
+- Chemistry and mining: molar quantities, half-life, dilution, recovery, strip ratio, blended grade, and contained metal
+- Software, AI infrastructure, VFX, photography, astronomy, and everyday projects: image/video storage, token runtime, concurrency, camera field of view, frame planning, light travel time, paint/tile/seed estimates, rainwater, fuel, solar energy, and household usage
+
+Each formula tool has a stable ID, formula, input validation, unit metadata, source link, method steps, assumptions, limitations, and a result visualization profile. Each generated converter is a real directed conversion using the explicit unit scale or temperature offset; it is linked to NIST SP 811, carries the conversion method, and has tested reverse conversion. Converter inputs accept numeric values only. The formula catalog remains extensible through `catalog/public/index.mjs`; the homepage shows 10 results at a time and field pages show 20 at a time with search and “Show more” controls.
+
+The recursive “Help me find this value” guide is available for calculator inputs. It explains the input using the calculator’s field metadata, offers published calculators whose outputs have compatible dimensions and temperature semantics, and requires the user to choose a result before transferring it. Helper calculators can open the same guide for their own inputs; unit and range checks run at every handoff. This is a deterministic on-device guide, not a hosted generative AI service. For example, lawn seed mass uses a dimensioned kg/m² sowing rate and accepts common label units, but it does not invent a recommended rate: the user must follow the seed maker’s label.
+
+Earlier expansion topics also cover:
 
 - Spring force and energy, momentum, impulse, near-Earth potential energy, circular motion, torque, rotational energy, pendulum period, thermal expansion, and sensible heat
 - Hydrostatic pressure, buoyancy, volumetric and mass flow, pipe Reynolds number, idealized Bernoulli pressure change, pump power estimate, and steady one-layer conduction

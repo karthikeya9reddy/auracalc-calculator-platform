@@ -118,28 +118,55 @@ function outputText(definition, result, id, locale) {
   return `${field.label}: ${number} ${unit}`.trim();
 }
 
+function inputMagnitude(result, id) {
+  return Math.abs(result.inputs[id]?.canonicalValue || 0);
+}
+
+function scaledSketchExtent(value, min, max) {
+  const magnitude = Math.max(0, Number(value) || 0);
+  const weight = Math.log10(1 + magnitude);
+  return min + (max - min) * (weight / (weight + 2));
+}
+
+function relativeSketchLengths(values, maximum, minimum = 34) {
+  const largest = Math.max(...values.map(value => Math.abs(Number(value) || 0)), 1e-12);
+  return values.map(value => Math.max(minimum, maximum * Math.abs(Number(value) || 0) / largest));
+}
+
 function renderGeometry(svg, id, definition, result, locale) {
   const common = { fill: 'rgba(184,255,61,.12)', stroke: '#b8ff3d', 'stroke-width': 2.5 };
   const detail = { stroke: '#70e8ff', 'stroke-width': 1.5, 'stroke-dasharray': '5 5', fill: 'none' };
   if (id === 'circle-area-circumference' || id === 'sphere-volume') {
-    svg.append(element('circle', { cx: 128, cy: 92, r: 58, ...common, class: id === 'sphere-volume' ? 'visual-3d-sphere' : 'visual-geometry-face' }));
+    const radius = scaledSketchExtent(inputMagnitude(result, 'radius'), 34, 68);
+    svg.append(element('circle', { cx: 128, cy: 92, r: radius, ...common, class: id === 'sphere-volume' ? 'visual-3d-sphere' : 'visual-geometry-face' }));
     if (id === 'sphere-volume') {
-      svg.append(element('ellipse', { cx: 111, cy: 70, rx: 18, ry: 10, transform: 'rotate(-32 111 70)', class: 'visual-sphere-highlight' }));
-      svg.append(element('ellipse', { cx: 128, cy: 92, rx: 56, ry: 17, class: 'visual-sphere-latitude' }));
+      svg.append(element('ellipse', { cx: 111, cy: 70, rx: radius * .31, ry: radius * .17, transform: 'rotate(-32 111 70)', class: 'visual-sphere-highlight' }));
+      svg.append(element('ellipse', { cx: 128, cy: 92, rx: radius * .96, ry: radius * .29, class: 'visual-sphere-latitude' }));
     }
-    svg.append(element('path', { d: 'M128 92H186', ...detail }));
+    svg.append(element('path', { d: `M128 92H${128 + radius}`, ...detail }));
     label(svg, 140, 86, dimText(definition, result, 'radius', locale) || 'radius');
   } else if (id === 'right-triangle-hypotenuse' || id === 'triangle-area') {
-    svg.append(element('path', { d: 'M70 145 L70 46 L250 145 Z', ...common }));
-    svg.append(element('path', { d: 'M70 130 H85 V145', ...detail }));
+    const firstId = id === 'triangle-area' ? 'base' : 'leg-a';
+    const secondId = id === 'triangle-area' ? 'height' : 'leg-b';
+    const [width, height] = relativeSketchLengths([inputMagnitude(result, firstId), inputMagnitude(result, secondId)], 170, 42);
+    const x0 = 70;
+    const y0 = 145;
+    svg.append(element('path', { d: `M${x0} ${y0} L${x0} ${y0 - height} L${x0 + width} ${y0} Z`, ...common }));
+    svg.append(element('path', { d: `M${x0} ${y0 - 15} H${x0 + 15} V${y0}`, ...detail }));
     label(svg, 74, 91, dimText(definition, result, id === 'triangle-area' ? 'height' : 'leg-b', locale) || 'height');
     label(svg, 132, 161, dimText(definition, result, id === 'triangle-area' ? 'base' : 'leg-a', locale) || 'base');
     label(svg, 160, 84, id === 'triangle-area'
       ? (outputText(definition, result, definition.outputs[0]?.id, locale) || 'area')
       : (outputText(definition, result, 'hypotenuse', locale) || 'hypotenuse'));
   } else if (id === 'trapezoid-area') {
-    svg.append(element('path', { d: 'M62 145 L110 48 L236 48 L284 145 Z', ...common }));
-    svg.append(element('path', { d: 'M110 57V145', ...detail }));
+    const [bottom, top] = relativeSketchLengths([inputMagnitude(result, 'parallel-side-1'), inputMagnitude(result, 'parallel-side-2')], 190, 44);
+    const height = scaledSketchExtent(inputMagnitude(result, 'height'), 55, 100);
+    const center = 160;
+    const bottomLeft = center - bottom / 2;
+    const topLeft = center - top / 2;
+    const topY = 145 - height;
+    svg.append(element('path', { d: `M${bottomLeft} 145 L${topLeft} ${topY} L${topLeft + top} ${topY} L${center + bottom / 2} 145 Z`, ...common }));
+    svg.append(element('path', { d: `M${topLeft} ${topY + 8} V145`, ...detail }));
     label(svg, 127, 42, dimText(definition, result, 'parallel-side-1', locale) || 'a');
     label(svg, 148, 163, dimText(definition, result, 'parallel-side-2', locale) || 'b');
     label(svg, 74, 99, dimText(definition, result, 'height', locale) || 'h');
@@ -171,44 +198,82 @@ function renderGeometry(svg, id, definition, result, locale) {
     label(svg, 123, 157, dimText(definition, result, 'depth', locale) || 'depth');
     label(svg, 281, 83, 'base area');
   } else if (id === 'cone-volume') {
-    svg.append(element('ellipse', { cx: 157, cy: 143, rx: 89, ry: 25, class: 'visual-3d-base' }));
-    svg.append(element('path', { d: 'M157 31 L68 142 Q157 177 246 142 Z', ...common, class: 'visual-3d-cone' }));
-    svg.append(element('path', { d: 'M157 31 V144 M157 144 H242', ...detail }));
+    const radius = scaledSketchExtent(inputMagnitude(result, 'radius'), 44, 88);
+    const height = scaledSketchExtent(inputMagnitude(result, 'height'), 52, 108);
+    const center = 157;
+    const baseY = 143;
+    const topY = baseY - height;
+    const ellipseY = Math.max(11, radius * .28);
+    svg.append(element('ellipse', { cx: center, cy: baseY, rx: radius, ry: ellipseY, class: 'visual-3d-base' }));
+    svg.append(element('path', { d: `M${center} ${topY} L${center - radius} ${baseY} Q${center} ${baseY + ellipseY * 1.35} ${center + radius} ${baseY} Z`, ...common, class: 'visual-3d-cone' }));
+    svg.append(element('path', { d: `M${center} ${topY} V${baseY} M${center} ${baseY} H${center + radius * .9}`, ...detail }));
     label(svg, 166, 86, dimText(definition, result, 'height', locale) || 'height');
     label(svg, 188, 160, dimText(definition, result, 'radius', locale) || 'radius');
   } else if (id === 'cylinder-volume') {
-    svg.append(element('path', { d: 'M82 48 C82 36 226 36 226 48 L226 137 C226 165 82 165 82 137 Z', class: 'visual-3d-cylinder' }));
-    svg.append(element('ellipse', { cx: 154, cy: 48, rx: 72, ry: 21, ...common, class: 'visual-3d-top' }));
-    svg.append(element('path', { d: 'M82 48 V137 M226 48 V137 M82 137 C82 165 226 165 226 137', ...common, fill: 'none' }));
-    svg.append(element('path', { d: 'M154 48 V137 M154 137 H224', ...detail }));
+    const [width, height] = relativeSketchLengths([inputMagnitude(result, 'radius') * 2, inputMagnitude(result, 'height')], 150, 48);
+    const center = 154;
+    const rx = width / 2;
+    const ry = Math.max(12, rx * .28);
+    const topY = 48;
+    const bottomY = Math.min(155, topY + height);
+    svg.append(element('path', { d: `M${center - rx} ${topY} C${center - rx} ${topY - ry} ${center + rx} ${topY - ry} ${center + rx} ${topY} L${center + rx} ${bottomY} C${center + rx} ${bottomY + ry} ${center - rx} ${bottomY + ry} ${center - rx} ${bottomY} Z`, class: 'visual-3d-cylinder' }));
+    svg.append(element('ellipse', { cx: center, cy: topY, rx, ry, ...common, class: 'visual-3d-top' }));
+    svg.append(element('path', { d: `M${center - rx} ${topY} V${bottomY} M${center + rx} ${topY} V${bottomY} M${center - rx} ${bottomY} C${center - rx} ${bottomY + ry} ${center + rx} ${bottomY + ry} ${center + rx} ${bottomY}`, ...common, fill: 'none' }));
+    svg.append(element('path', { d: `M${center} ${topY} V${bottomY} M${center} ${bottomY} H${center + rx * .9}`, ...detail }));
     label(svg, 160, 93, dimText(definition, result, 'height', locale) || 'height');
     label(svg, 178, 132, dimText(definition, result, 'radius', locale) || 'radius');
   } else if (id === 'rectangle-area') {
-    svg.append(element('polygon', { points: '70,62 250,48 278,132 98,147', class: 'visual-3d-plane' }));
-    svg.append(element('path', { d: 'M70 62 L250 48 M98 147 L278 132', ...detail }));
+    const [length, width] = relativeSketchLengths([inputMagnitude(result, 'length'), inputMagnitude(result, 'width')], 185, 46);
+    const originX = 70;
+    const originY = 61;
+    const dx = width * .25;
+    const dy = width * .66;
+    svg.append(element('polygon', { points: `${originX},${originY} ${originX + length},${originY - 12} ${originX + length + dx},${originY + dy - 12} ${originX + dx},${originY + dy}`, class: 'visual-3d-plane' }));
+    svg.append(element('path', { d: `M${originX} ${originY} L${originX + length} ${originY - 12} M${originX + dx} ${originY + dy} L${originX + length + dx} ${originY + dy - 12}`, ...detail }));
     label(svg, 120, 161, dimText(definition, result, 'length', locale) || 'length');
     label(svg, 264, 91, dimText(definition, result, 'width', locale) || 'width');
   } else {
-    svg.append(element('rect', { x: 70, y: 55, width: 190, height: 90, ...common }));
-    label(svg, 92, 105, dimText(definition, result, definition.inputs[0]?.id, locale) || definition.inputs[0]?.label || 'dimension');
-    label(svg, 276, 105, outputText(definition, result, definition.outputs[0]?.id, locale) || 'result');
+    renderBars(svg, definition, result, 'geometry', locale);
   }
   label(svg, 318, 64, outputText(definition, result, definition.outputs[0]?.id, locale) || 'Calculated result', 'visual-result');
 }
 
 function renderMotion(svg, id, definition, result, locale) {
   if (id === 'projectile-motion-level-ground') {
-    svg.append(element('path', { d: 'M44 150 Q245 18 434 150', class: 'visual-curve' }));
-    svg.append(element('circle', { cx: 44, cy: 150, r: 5, class: 'visual-point' }), element('circle', { cx: 434, cy: 150, r: 5, class: 'visual-point' }));
-    svg.append(element('path', { d: 'M55 143 L85 131', class: 'visual-arrow' }));
-    label(svg, 70, 122, dimText(definition, result, 'launch-speed', locale) || 'launch speed');
-    label(svg, 288, 157, outputText(definition, result, 'range', locale) || 'range');
-    label(svg, 270, 34, outputText(definition, result, 'peak-height', locale) || 'peak height');
+    const x0 = 44;
+    const y0 = 150;
+    const range = inputMagnitude(result, 'launch-speed') === 0 ? 0 : Math.abs(result.outputs.range?.value || 0);
+    const peakHeight = Math.abs(result.outputs['peak-height']?.value || 0);
+    const horizontalExtent = range < 1e-12 ? 12 : scaledSketchExtent(range, 82, 382);
+    const verticalExtent = peakHeight < 1e-12 ? 0 : scaledSketchExtent(peakHeight, 10, 105);
+    const x1 = x0 + horizontalExtent;
+    const controlY = y0 - Math.max(0, verticalExtent) * 2;
+    const trajectory = verticalExtent < 1
+      ? `M${x0} ${y0} L${x1} ${y0}`
+      : `M${x0} ${y0} Q${(x0 + x1) / 2} ${controlY} ${x1} ${y0}`;
+    svg.append(element('path', { d: trajectory, class: 'visual-curve visual-trajectory' }));
+    svg.append(element('circle', { cx: x0, cy: y0, r: 5, class: 'visual-point' }), element('circle', { cx: x1, cy: y0, r: 5, class: 'visual-point' }));
+    const angle = result.inputs['launch-angle']?.canonicalValue || 0;
+    const angleLength = 30;
+    const arrowX = x0 + Math.cos(angle) * angleLength;
+    const arrowY = y0 - Math.sin(angle) * angleLength;
+    svg.append(element('path', { d: `M${x0 + 7} ${y0 - 2} L${arrowX} ${arrowY}`, class: 'visual-arrow' }));
+    label(svg, 64, 120, dimText(definition, result, 'launch-speed', locale) || 'launch speed');
+    label(svg, Math.min(330, x0 + horizontalExtent * .55), 169, outputText(definition, result, 'range', locale) || 'range');
+    label(svg, Math.min(330, x0 + horizontalExtent * .47), Math.max(32, y0 - verticalExtent - 8), outputText(definition, result, 'peak-height', locale) || 'peak height');
+    label(svg, 42, 37, `Launch angle ${new Intl.NumberFormat(locale || 'en-US', { maximumFractionDigits: 1 }).format(angle * 180 / Math.PI)}°`, 'visual-small-label');
   } else if (id === 'simple-pendulum-period') {
-    svg.append(element('path', { d: 'M232 38 L173 134 M232 38 L291 134', class: 'visual-curve' }));
-    svg.append(element('circle', { cx: 232, cy: 38, r: 7, class: 'visual-point' }), element('circle', { cx: 173, cy: 134, r: 14, class: 'visual-node' }), element('circle', { cx: 291, cy: 134, r: 14, class: 'visual-node' }));
-    label(svg, 232, 162, outputText(definition, result, definition.outputs[0]?.id, locale) || 'period');
-    label(svg, 76, 73, dimText(definition, result, 'length', locale) || 'length');
+    const length = inputMagnitude(result, 'length');
+    const swingLength = scaledSketchExtent(length, 38, 88);
+    const pivotX = 232;
+    const pivotY = 35;
+    const leftX = pivotX - swingLength * .62;
+    const rightX = pivotX + swingLength * .62;
+    const bobY = Math.min(143, pivotY + swingLength);
+    svg.append(element('path', { d: `M${pivotX} ${pivotY} L${leftX} ${bobY} M${pivotX} ${pivotY} L${rightX} ${bobY}`, class: 'visual-curve' }));
+    svg.append(element('circle', { cx: pivotX, cy: pivotY, r: 7, class: 'visual-point' }), element('circle', { cx: leftX, cy: bobY, r: 14, class: 'visual-node' }), element('circle', { cx: rightX, cy: bobY, r: 14, class: 'visual-node' }));
+    label(svg, 232, 166, outputText(definition, result, definition.outputs[0]?.id, locale) || 'period');
+    label(svg, 68, 74, dimText(definition, result, 'length', locale) || 'length');
   } else if (id.includes('wave') || id.includes('period-from-frequency')) {
     const path = [];
     for (let i = 0; i <= 32; i += 1) {
@@ -254,7 +319,81 @@ function renderThermal(svg, definition, result, locale) {
   label(svg, 284, 45, outputText(definition, result, definition.outputs[0]?.id, locale) || 'heat transfer result');
 }
 
+function gearToothPath(teeth, rootRadius, tipRadius) {
+  const displayedTeeth = Math.min(64, Math.max(4, Math.round(teeth)));
+  const points = [];
+  for (let tooth = 0; tooth < displayedTeeth; tooth += 1) {
+    const start = (tooth / displayedTeeth) * Math.PI * 2;
+    for (const [fraction, radius] of [[0, rootRadius], [.18, rootRadius], [.25, tipRadius], [.75, tipRadius], [.82, rootRadius], [1, rootRadius]]) {
+      const angle = start + fraction * Math.PI * 2 / displayedTeeth;
+      points.push([Math.cos(angle) * radius, Math.sin(angle) * radius]);
+    }
+  }
+  return `M${points.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).join('L')}Z`;
+}
+
+function renderGearPair(svg, definition, result, locale) {
+  const driver = result.inputs['driver-teeth']?.canonicalValue;
+  const driven = result.inputs['driven-teeth']?.canonicalValue;
+  if (!(driver > 0 && driven > 0)) return renderProcess(svg, definition, result, locale);
+  const ratio = result.outputs['speed-ratio']?.value || driver / driven;
+  const sum = driver + driven;
+  const driverRadius = Math.max(30, Math.min(82, 154 * driver / sum));
+  const drivenRadius = Math.max(30, Math.min(82, 154 * driven / sum));
+  const left = 240 - driverRadius - drivenRadius;
+  const driverX = left + driverRadius;
+  const drivenX = driverX + driverRadius + drivenRadius;
+  const centerY = 91;
+  const inputRadPerSecond = Math.abs(result.inputs['input-speed']?.canonicalValue || 0);
+  const inputRpm = inputRadPerSecond * 60 / (Math.PI * 2);
+  const inputDuration = Math.max(.8, Math.min(8, inputRpm > 0 ? 60 / inputRpm : 4));
+  const outputDuration = Math.max(.8, Math.min(8, inputDuration / Math.max(.05, Math.abs(ratio))));
+  for (const [cx, radius, teeth, className, duration] of [
+    [driverX, driverRadius, driver, 'visual-gear-motion visual-gear-driver', inputDuration],
+    [drivenX, drivenRadius, driven, 'visual-gear-motion visual-gear-driven', outputDuration],
+  ]) {
+    const group = element('g', {
+      class: className,
+      transform: `translate(${cx} ${centerY})`,
+      'data-tooth-count': teeth,
+      style: `transform-origin:${cx}px ${centerY}px;animation-duration:${duration.toFixed(2)}s`,
+    });
+    const toothPath = gearToothPath(teeth, radius * .87, radius);
+    group.append(element('path', { d: toothPath, transform: 'translate(0 7)', class: 'visual-gear-depth' }));
+    group.append(element('path', { d: toothPath, class: 'visual-gear-shape' }));
+    group.append(element('ellipse', { cx: 0, cy: 6, rx: Math.max(8, radius * .2), ry: Math.max(6, radius * .16), class: 'visual-gear-hub-depth' }));
+    group.append(element('circle', { r: Math.max(8, radius * .2), class: 'visual-gear-hub' }));
+    group.append(element('circle', { r: 3, class: 'visual-gear-center' }));
+    svg.append(group);
+  }
+  svg.append(element('path', { d: `M${driverX + driverRadius * .52} ${centerY - driverRadius * .66} Q240 14 ${drivenX - drivenRadius * .52} ${centerY - drivenRadius * .66}`, class: 'visual-gear-speed-arc' }));
+  label(svg, Math.max(26, driverX - 42), 29, `DRIVER · ${driver} TEETH`, 'visual-gear-label');
+  label(svg, Math.min(324, drivenX - 42), 29, `DRIVEN · ${driven} TEETH`, 'visual-gear-label');
+  label(svg, 30, 177, `Input ${dimText(definition, result, 'input-speed', locale) || ''}`, 'visual-label');
+  label(svg, 264, 177, outputText(definition, result, 'output-speed', locale) || 'Output speed', 'visual-result');
+  label(svg, 193, 150, `Speed ratio ${new Intl.NumberFormat(locale || 'en-US', { maximumSignificantDigits: 4 }).format(ratio)}`, 'visual-small-label');
+  label(svg, 154, 165, 'Schematic gear sizes are illustrative; tooth form, mesh, strength, and load are not modeled.', 'visual-footnote');
+}
+
 function renderProcess(svg, definition, result, locale) {
+  if (definition.id === 'gear-pair-output-speed') return renderGearPair(svg, definition, result, locale);
+  if (definition.inputs.length > 3) {
+    const positions = [[14, 27], [14, 97], [135, 27], [135, 97]];
+    const count = Math.min(definition.inputs.length, positions.length);
+    for (let i = 0; i < count; i += 1) {
+      const field = definition.inputs[i];
+      const [x, y] = positions[i];
+      svg.append(element('rect', { x, y, width: 108, height: 52, rx: 7, class: i === count - 1 ? 'visual-node-alt' : 'visual-node' }));
+      label(svg, x + 7, y + 19, field.label.slice(0, 16), 'visual-small-label');
+      label(svg, x + 7, y + 38, dimText(definition, result, field.id, locale)?.slice(0, 15) || '—', 'visual-label');
+      svg.append(element('path', { d: `M${x + 109} ${y + 26} H261 V95 H274`, class: 'visual-arrow' }));
+    }
+    svg.append(element('rect', { x: 278, y: 62, width: 176, height: 68, rx: 7, class: 'visual-node-alt' }));
+    label(svg, 290, 87, definition.outputs[0]?.label || 'Calculated result', 'visual-small-label');
+    label(svg, 290, 111, outputText(definition, result, definition.outputs[0]?.id, locale) || 'Result available', 'visual-result');
+    label(svg, 14, 174, definition.inputs.length > count ? `Showing ${count} of ${definition.inputs.length} inputs; review the rest in the method.` : 'Schematic only · see method and limits.', 'visual-footnote');
+    return;
+  }
   const labels = definition.inputs.slice(0, 3).map((field, index) => `${index + 1}. ${field.label}`);
   const boxPositions = [[36, 62], [171, 62], [306, 62]];
   for (let i = 0; i < Math.min(labels.length, 3); i += 1) {
@@ -269,28 +408,53 @@ function renderProcess(svg, definition, result, locale) {
 }
 
 function renderBars(svg, definition, result, kind, locale) {
-  const inputs = definition.inputs.slice(0, 2);
+  if (definition.inputs.length > 3) {
+    renderProcess(svg, definition, result, locale);
+    return;
+  }
+  const inputs = definition.inputs.slice(0, 3);
   const output = definition.outputs[0];
-  const positions = inputs.length > 1 ? [[30, 46], [30, 112]] : [[30, 78]];
+  const positions = inputs.length > 2 ? [[14, 36], [14, 78], [14, 120]] : inputs.length > 1 ? [[20, 48], [20, 112]] : [[28, 78]];
   inputs.forEach((field, index) => {
     const [x, y] = positions[index];
     const record = result.inputs[field.id];
     const text = record ? new Intl.NumberFormat(locale, { maximumSignificantDigits: 5 }).format(record.canonicalValue) : '—';
-    svg.append(element('rect', { x, y, width: 145, height: 43, rx: 5, class: 'visual-node' }));
-    label(svg, x + 9, y + 16, field.label.slice(0, 22), 'visual-small-label');
-    label(svg, x + 9, y + 33, `${text} ${field.canonicalUnit === '1' ? field.unitLabel || '' : field.canonicalUnit}`.trim(), 'visual-label');
+    const width = inputs.length > 2 ? 145 : 154;
+    const height = inputs.length > 2 ? 36 : 43;
+    svg.append(element('rect', { x, y, width, height, rx: 5, class: 'visual-node' }));
+    label(svg, x + 8, y + 14, field.label.slice(0, 21), 'visual-small-label');
+    label(svg, x + 8, y + 29, `${text} ${field.canonicalUnit === '1' ? field.unitLabel || '' : field.canonicalUnit}`.trim(), 'visual-label');
   });
-  svg.append(element('path', { d: inputs.length > 1 ? 'M178 68 H218 V95 H252 M178 133 H218 V106 H252' : 'M178 100 H252', class: 'visual-arrow' }));
-  svg.append(element('rect', { x: 260, y: 65, width: 190, height: 70, rx: 7, class: 'visual-node-alt' }));
-  label(svg, 274, 91, output?.label || 'Calculated result', 'visual-small-label');
-  label(svg, 274, 115, outputText(definition, result, output?.id, locale) || 'Result available', 'visual-result');
-  label(svg, 30, 174, kind === 'trend' ? 'Inputs and outcome summary; no future data is predicted.' : 'Visual summary only; see the method steps for the calculation.', 'visual-footnote');
+  const targetY = inputs.length > 2 ? 95 : 100;
+  const routes = inputs.map((_, index) => {
+    const [x, y] = positions[index];
+    const startY = y + (inputs.length > 2 ? 18 : 21);
+    return `M${x + (inputs.length > 2 ? 147 : 156)} ${startY} H219 V${targetY} H252`;
+  }).join(' ');
+  svg.append(element('path', { d: routes, class: 'visual-arrow' }));
+  svg.append(element('rect', { x: 260, y: 62, width: 190, height: 72, rx: 7, class: 'visual-node-alt' }));
+  label(svg, 274, 88, output?.label || 'Calculated result', 'visual-small-label');
+  label(svg, 274, 113, outputText(definition, result, output?.id, locale) || 'Result available', 'visual-result');
+  label(svg, 20, 174, definition.inputs.length > inputs.length ? `Showing ${inputs.length} of ${definition.inputs.length} inputs; all are listed in the method.` : kind === 'trend' ? 'Outcome summary only; this is not a forecast.' : 'Schematic summary; see the method steps for the calculation.', 'visual-footnote');
 }
 
 export function visualizationProfile(definition) {
   if (definition.visualization && VISUAL_KINDS.has(definition.visualization.kind)) return definition.visualization;
   const profile = PROFILES[definition.id];
-  if (!profile) return null;
+  if (!profile) {
+    const context = `${definition.title} ${definition.description} ${definition.discipline} ${definition.category} ${(definition.fields || []).join(' ')}`.toLowerCase();
+    const kind = /circuit|electrical|voltage|current|resistan/.test(context) ? 'circuit'
+      : /flow|fluid|hydraulic|pipe|pump/.test(context) ? 'flow'
+        : /thermal|heat|temperature|conduction|cooling|hvac/.test(context) ? 'thermal'
+          : /geometry|area|volume|shape|construction|civil|site|building/.test(context) ? 'geometry'
+            : /motion|mechanical|force|energy|physics|speed|velocity|torque/.test(context) ? 'motion'
+              : /chemistry|mining|ore|grade|concentration|molar|reaction/.test(context) ? 'balance'
+                : /finance|business|money|price|profit|margin|statistic|percentage|percent/.test(context) ? 'trend'
+                  : /software|hardware|data|cloud|network|storage|render|model|artificial intelligence|ai infrastructure/.test(context) ? 'capacity'
+                    : 'diagram';
+    const title = `${definition.title} · calculation map`;
+    return { kind, title, description: `Visual summary of the entered values and calculated output for ${definition.title}. It is a schematic aid; use the displayed method, units, assumptions, and limitations for interpretation.` };
+  }
   return { kind: profile[0], title: profile[1], description: `${profile[1]}. Schematic only; use the displayed method, units, assumptions, and limitations for interpretation.` };
 }
 

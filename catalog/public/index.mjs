@@ -37,8 +37,12 @@ import { physicsEngineeringExpansion } from './physics-engineering-expansion.mjs
 import { appliedFieldsExpansion } from './applied-fields-expansion.mjs';
 import { digitalEverydayExpansion } from './digital-everyday-expansion.mjs';
 import { advancedMathEngineering } from './advanced-math-engineering.mjs';
+import { next100Calculators } from './next-100-expansion.mjs';
+import { titanCalculators } from './titan-expansion.mjs';
+import { unitConversionCalculators } from './unit-conversion-expansion.mjs';
+import { foodEnergyFromLabel } from './food-energy-from-label.mjs';
 
-export const publicDefinitions = Object.freeze([
+const formulaDefinitions = [
   percentageChange,
   rectangleArea,
   rectangularPrismVolume,
@@ -77,11 +81,29 @@ export const publicDefinitions = Object.freeze([
   ...appliedFieldsExpansion,
   ...digitalEverydayExpansion,
   ...advancedMathEngineering,
-]);
+  ...next100Calculators,
+  ...titanCalculators,
+  foodEnergyFromLabel,
+];
+
+export const publicDefinitions = Object.freeze(formulaDefinitions.map(definition => Object.freeze({
+  ...definition,
+  catalogKind: 'calculator',
+})));
+
+export const publicFormulaDefinitions = publicDefinitions;
+export const publicConverterDefinitions = unitConversionCalculators;
 
 export const publicRegistry = new CalculatorRegistry();
 for (const definition of publicDefinitions) publicRegistry.register(definition);
 
+export const converterRegistry = new CalculatorRegistry();
+for (const definition of publicConverterDefinitions) converterRegistry.register(definition);
+
 export function listPublicCalculators() {
   return publicRegistry.listPublished();
+}
+
+export function listPublicConverters() {
+  return converterRegistry.listPublished();
 }

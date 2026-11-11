@@ -63,7 +63,7 @@ test('every released calculator returns traceable, ordered worked steps', () => 
   }
 });
 
-test('50 newly added cross-field tools produce finite answers and worked traces', () => {
+test('49 newly added cross-field tools produce finite answers and worked traces', () => {
   const cases = [
     ['spring-force-magnitude', { stiffness: 100, displacement: 0.05 }, 'force', 5],
     ['spring-potential-energy', { stiffness: 100, displacement: 0.2 }, 'energy', 2],
@@ -74,7 +74,6 @@ test('50 newly added cross-field tools produce finite answers and worked traces'
     ['centripetal-force', { mass: 2, speed: 3, radius: 3 }, 'force', 6],
     ['torque-from-force', { force: 10, 'lever-arm': 0.5, angle: { value: 90, unit: 'deg' } }, 'torque', 5],
     ['rotational-kinetic-energy', { 'moment-of-inertia': 2, 'angular-speed': { value: 60, unit: 'rpm' } }, 'energy', 4 * Math.PI ** 2],
-    ['angular-speed-from-rpm', { rpm: { value: 60, unit: 'rpm' } }, 'angular-speed', 2 * Math.PI],
     ['angular-acceleration-from-torque', { 'net-torque': 6, 'moment-of-inertia': 2 }, 'angular-acceleration', 3],
     ['simple-pendulum-period', { length: 1 }, 'period', 2 * Math.PI * Math.sqrt(1 / 9.80665)],
     ['linear-thermal-expansion', { 'initial-length': 1, 'expansion-coefficient': 12e-6, 'temperature-change': 50 }, 'length-change', 0.0006],
@@ -116,7 +115,7 @@ test('50 newly added cross-field tools produce finite answers and worked traces'
     ['trip-fuel-estimate', { distance: { value: 100, unit: 'km' }, consumption: 8, 'fuel-price': 1.5 }, 'fuel-cost', 12],
     ['weighted-average-two-groups', { 'value-1': 10, 'weight-1': 1, 'value-2': 20, 'weight-2': 3 }, 'weighted-mean', 17.5],
   ];
-  assert.equal(cases.length, 50);
+  assert.equal(cases.length, 49);
   for (const [id, inputs, outputId, expected] of cases) {
     const result = run(id, inputs);
     close(result.outputs[outputId].value, expected, 1e-8);

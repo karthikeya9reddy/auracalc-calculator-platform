@@ -1,3 +1,5 @@
+import { matchesSearchText } from './unified-search.mjs';
+
 const input = document.querySelector('#field-directory-search');
 const grid = document.querySelector('#field-directory-grid');
 const status = document.querySelector('#field-directory-status');
@@ -12,7 +14,7 @@ input?.addEventListener('input', () => {
   const query = normalize(input.value);
   let visible = 0;
   for (const card of cards) {
-    const matches = normalize(card.dataset.fieldName).includes(query);
+    const matches = matchesSearchText(card.dataset.fieldName, query);
     card.hidden = !matches;
     if (matches) visible += 1;
   }

@@ -23,15 +23,18 @@ export const SPECIFIC_HEAT = divideDimensions(divideDimensions(ENERGY, D.mass), 
 export const INV_TEMPERATURE = powerDimension(D.temperature, -1);
 export const VISCOSITY = multiplyDimensions(PRESSURE, D.time);
 export const THERMAL_CONDUCTIVITY = divideDimensions(POWER, multiplyDimensions(D.length, D.temperature));
-export const ANGULAR_VELOCITY = powerDimension(D.time, -1);
-export const ANGULAR_ACCELERATION = powerDimension(D.time, -2);
+// Preserve angle/time as a distinct dimension so rotations per minute are
+// never silently treated as cycles per second.
+export const ANGULAR_VELOCITY = divideDimensions(D.planeAngle, D.time);
+export const ANGULAR_ACCELERATION = divideDimensions(ANGULAR_VELOCITY, D.time);
 export const VOLTAGE = divideDimensions(ENERGY, multiplyDimensions(D.electricCurrent, D.time));
 export const RESISTANCE = divideDimensions(VOLTAGE, D.electricCurrent);
 export const CHARGE = multiplyDimensions(D.electricCurrent, D.time);
 export const CAPACITANCE = divideDimensions(CHARGE, VOLTAGE);
 
 export function qin(id, label, dimension, unit, units = [unit], options = {}) {
-  return physicalInput(id, label, dimension, unit, units, { min: 0, allowMagnitudeWords: true, ...options });
+  const { acceptedUnits, ...inputOptions } = options;
+  return physicalInput(id, label, dimension, unit, acceptedUnits || units, { min: 0, allowMagnitudeWords: true, ...inputOptions });
 }
 
 export function sin(id, label, unitLabel = '', options = {}) {

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080b0c">
+  <meta name="description" content="Measure a photo with a known reference and ask for AI guidance.">
+  <meta property="og:title" content="Visual Measurement Lab | AuraCalc">
+  <meta property="og:description" content="Use a known photo reference or supported AR surface tracking and carry estimates into a calculator.">
+  <meta property="og:type" content="website">
+  <title>Photo measurement and AI guidance | AuraCalc</title>
+  <link rel="canonical" href="/measure/photo/">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <link rel="stylesheet" href="/aura-theme.css">
+  <link rel="stylesheet" href="/measure/measure.css">
+  <script type="module" src="/measure/measure.mjs"></script>
+</head>
+<body class="measure-page" data-measure-default="photo">
+  <a class="measure-skip" href="#measure-main">Skip to measurement</a>
+  <header class="measure-header">
+    <a class="measure-brand" href="/" aria-label="AuraCalc home"><span><svg viewBox="0 0 34 34" aria-hidden="true"><path d="M7 4h20v5H12v5h11v5H12v5h15v5H7V4Z"/></svg></span><b>AURACALC</b></a>
+    <nav aria-label="Main navigation"><a href="/#explore">Calculators</a><a href="/fields/">Fields</a><a href="/converters/">Converters</a></nav>
+    <label class="measure-locale">Number format<select id="localeSelect" aria-label="Number format"><option value="en-US">1,234.5 · US</option><option value="en-GB">1,234.5 · UK</option><option value="de-DE">1.234,5 · DE</option><option value="fr-FR">1 234,5 · FR</option><option value="hi-IN">1,234.5 · IN</option></select></label>
+  </header>
+  <main id="measure-main" class="measure-shell">
+    <nav class="measure-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>/</span><span aria-current="page">Visual measurement</span></nav>
+    <section class="measure-intro">
+      <p class="measure-eyebrow">AURACALC · MEASURE</p>
+      <h1>Measure your world.<br><span>Choose how to begin.</span></h1>
+      <p>Explore an image with an AI assistant, measure a surface with your camera, or check the speed of your device.</p>
+      <div class="measure-limit"><strong>Measurements are estimates.</strong><span>Photo measurements require a known reference; AR measurements depend on device tracking. Check important dimensions with a calibrated instrument.</span></div>
+    </section>
+    <div class="measure-mode-nav" role="group" aria-label="Choose a measurement tool"><button type="button" class="measure-mode active" data-measure-mode="photo" aria-pressed="true"><strong>Photo + AI</strong><span>Analyze and measure an image</span></button><button type="button" class="measure-mode" data-measure-mode="ar" aria-pressed="false"><strong>Live AR</strong><span>Measure between two surfaces</span></button><button type="button" class="measure-mode" data-measure-mode="speed" aria-pressed="false"><strong>Speedometer</strong><span>Use device location speed</span></button></div>
+    <section class="measure-tools" data-measure-panel="speed" aria-labelledby="live-tools-title" hidden>
+      <div class="measure-tools-heading"><div><p class="measure-eyebrow">LIVE TOOLS</p><h2 id="live-tools-title">Measure on the move</h2><p>Check your device and use its location sensor to see your own speed.</p></div><button id="check-capabilities" class="measure-button measure-button-secondary" type="button">Check device support</button></div>
+      <p id="capability-status" class="measure-status" role="status" aria-live="polite">Camera, location and AR support can vary by device and browser.</p>
+      <div class="speedometer"><div><span class="measure-eyebrow">DEVICE SPEED</span><strong id="speed-value">—</strong><span id="speed-unit-label">km/h</span><p id="speed-status" role="status" aria-live="polite">Start to request location access. Your location stays in this browser.</p></div><div class="speed-controls"><label for="speed-unit">Speed unit</label><select id="speed-unit"><option value="km/h">km/h</option><option value="mph">mph</option><option value="m/s">m/s</option></select><button id="speed-start" class="measure-button measure-button-primary" type="button">Start speedometer</button><button id="speed-stop" class="measure-button measure-button-secondary" type="button" disabled>Stop</button></div></div>
+      <p class="measure-live-note">Speed depends on the location sensor and may be delayed or unavailable. Let a passenger operate this feature. This measures the device's speed.</p>
+      <div id="speed-handoffs" class="measurement-handoffs" hidden></div>
+    </section>
+    <section class="measure-tools ar-panel" data-measure-panel="ar" aria-labelledby="ar-title" hidden><p class="measure-eyebrow">LIVE CAMERA · SUPPORTED DEVICES</p><h2 id="ar-title">Measure a distance in AR</h2><p>Move your camera until a surface is found, then choose two points. The distance updates as you aim at the second point.</p><button id="ar-start" class="measure-button measure-button-primary" type="button">Start AR measurement</button><p id="ar-status" class="measure-status" role="status" aria-live="polite">AR requires a secure connection and a browser that supports surface tracking and on-screen controls.</p><div id="ar-result" class="measurement-output" hidden><div><span class="measure-eyebrow">LAST AR ESTIMATE</span><strong id="ar-value"></strong><p>Surface tracking can drift. Check important measurements with a calibrated tool.</p></div><div id="ar-handoffs" class="measurement-handoffs" hidden></div></div></section>
+    <section class="measure-workspace" data-measure-panel="photo" aria-label="Photo measurement workspace">
+      <div class="measure-panel measure-controls">
+        <div class="measure-panel-heading"><span class="measure-step">01</span><div><h2>Choose an image</h2><p>Pick a photo or capture one camera frame.</p></div></div>
+        <div class="measure-actions"><label class="measure-button measure-button-secondary" for="photo-file">Choose a photo</label><input id="photo-file" type="file" accept="image/*"><button id="camera-start" class="measure-button measure-button-secondary" type="button">Open camera</button><button id="capture-frame" class="measure-button measure-button-primary" type="button" hidden>Capture frame</button></div>
+        <div class="photo-assistant"><div><span class="measure-eyebrow">OPTIONAL AI ASSISTANT</span><h3>What would you like to measure?</h3><p>Ask for help identifying an object or choosing a reference. Your photo and question are sent to the configured AI provider only when you select Analyze.</p></div><label for="vision-question">Your question (optional)</label><textarea id="vision-question" rows="2" maxlength="400" placeholder="For example: How can I measure this tabletop?"></textarea><div class="measure-actions"><button id="vision-analyze" class="measure-button measure-button-secondary" type="button" disabled>Analyze photo with AI</button><button id="vision-check" class="measure-button measure-button-quiet" type="button">Check AI connection</button></div><p id="vision-status" class="measure-status" role="status" aria-live="polite">Checking the AI connection…</p><div id="vision-answer" class="vision-answer" hidden></div><details class="vision-setup"><summary>Site owner: set up photo AI</summary><p>Photo AI uses an OpenAI API account and may incur charges. Stop the website with Ctrl+C. In the same PowerShell window, enter the following commands; your key will be hidden while typing. Restart the site, then choose Check AI connection.</p><pre>$auraSecret = Read-Host 'OpenAI API key' -AsSecureString
+$env:OPENAI_API_KEY = [System.Net.NetworkCredential]::new('', $auraSecret).Password
+Remove-Variable auraSecret
+npm.cmd run dev</pre><p>Get a key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">OpenAI’s API dashboard</a>. Keep the key private; never paste it into the website or chat.</p></details></div>
+        <div class="measure-panel-heading"><span class="measure-step">02</span><div><h2>Set the scale</h2><p>Measure a known length on the same plane.</p></div></div>
+        <div class="measure-scale-row"><label for="reference-length">Known length</label><div><input id="reference-length" type="number" min="0.000001" step="any" inputmode="decimal" placeholder="e.g. 100"><select id="reference-unit" aria-label="Reference length unit"><option value="mm">mm</option><option value="cm" selected>cm</option><option value="m">m</option><option value="in">in</option><option value="ft">ft</option></select></div></div>
+        <button id="set-scale" class="measure-button measure-button-primary" type="button" disabled>Mark reference endpoints</button>
+        <div class="measure-panel-heading measure-panel-heading-spaced"><span class="measure-step">03</span><div><h2>Measure the surface</h2><p>Use points on the calibrated plane.</p></div></div>
+        <div class="measure-actions"><button id="measure-length" class="measure-button measure-button-secondary" type="button" disabled>Measure length</button><button id="measure-area" class="measure-button measure-button-secondary" type="button" disabled>Measure area</button></div>
+        <div class="measure-actions measure-edit-actions"><button id="finish-area" class="measure-button measure-button-secondary" type="button" disabled>Finish area</button><button id="undo-point" class="measure-button measure-button-secondary" type="button" disabled>Undo point</button><button id="clear-marks" class="measure-button measure-button-quiet" type="button" disabled>Clear marks</button></div>
+        <details class="coordinate-entry"><summary>Enter point positions for keyboard access</summary><p>Use image percentages from the upper-left corner: X runs left to right, Y runs top to bottom.</p><div><label for="point-x">X position (%)</label><input id="point-x" type="number" min="0" max="100" step="any" inputmode="decimal" value="50"><label for="point-y">Y position (%)</label><input id="point-y" type="number" min="0" max="100" step="any" inputmode="decimal" value="50"></div><button id="place-coordinate" class="measure-button measure-button-secondary" type="button" disabled>Add point</button></details>
+        <p id="measure-status" class="measure-status" role="status" aria-live="polite">Choose a photo or camera frame to begin.</p>
+      </div>
+      <div class="measure-panel measure-view-panel">
+        <div class="measure-view-heading"><div><span class="measure-eyebrow">POINTS + SCALE</span><h2>Your measurement view</h2></div><button id="reset-measurement" class="measure-button measure-button-quiet" type="button">Start over</button></div>
+        <div class="measure-zoom-row"><label for="measure-zoom">Image zoom</label><input id="measure-zoom" type="range" min="1" max="4" step="0.25" value="1"><output id="measure-zoom-value" for="measure-zoom">1×</output><span>Scroll the view to reach image edges when zoomed.</span></div>
+        <div id="measurement-stage" class="measurement-stage" hidden>
+          <div id="measurement-layer" class="measurement-layer">
+            <img id="measurement-image" alt="Selected image with measurement points" hidden>
+            <video id="camera-video" playsinline muted hidden aria-label="Live camera preview"></video>
+            <canvas id="capture-canvas" hidden></canvas>
+            <svg id="measurement-overlay" role="application" aria-label="Measurement image. Use the controls to select endpoints or enter coordinates." tabindex="0"></svg>
+          </div>
+        </div>
+        <div class="measure-empty" id="measure-empty"><span aria-hidden="true">⌖</span><strong>Start with a photo</strong><p>Mark points locally, or choose AI analysis to send the image and your question to the configured provider.</p></div>
+        <section id="measurement-output" class="measurement-output" aria-live="polite" hidden><div><span class="measure-eyebrow">CURRENT ESTIMATE</span><strong id="measurement-value">—</strong><p id="measurement-note"></p></div><div id="measurement-handoffs" class="measurement-handoffs" hidden></div></section>
+      </div>
+    </section>
+    <section class="measure-how" data-measure-panel="photo"><p class="measure-eyebrow">WHAT THIS CAN AND CANNOT MEASURE</p><div><h2>Flat geometry, with visible assumptions.</h2><p>Length uses the ratio between your marked reference pixels and its known length. Area uses that same scale squared and the polygon you mark. Both are approximate 2D estimates. A tilted surface, a reference at another depth, a curved object, a blurry edge, or an unknown reference can make the result misleading.</p><p>AI guidance can be mistaken and does not verify measurements. For engineering, construction, medical, legal, or safety decisions, verify dimensions with a calibrated measuring instrument and a qualified professional.</p></div></section>
+  </main>
+  <div id="ar-overlay" class="ar-overlay" hidden><div class="ar-crosshair" aria-hidden="true">⌖</div><div class="ar-overlay-controls"><p id="ar-live-status" role="status" aria-live="polite">Looking for a surface…</p><strong id="ar-live-value"></strong><div><button id="ar-place" class="measure-button measure-button-primary" type="button" disabled>Set first point</button><button id="ar-exit" class="measure-button measure-button-secondary" type="button">Finish AR</button></div></div></div>
+  <footer class="measure-footer"><a href="/">AuraCalc home</a><span>Photo measurements are estimates from user-marked points and a user-provided scale.</span></footer>
+</body>
+</html>
