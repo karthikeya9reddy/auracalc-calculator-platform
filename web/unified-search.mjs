@@ -31,6 +31,9 @@ export function matchesSearchText(text, query) {
   return searchTokens(query).every(token => tokenMatch(corpus, words, token));
 }
 const INTENTS = [
+  [/\b(?:salary|pay|income|price)\b.*\b(?:increase[ds]?|raise|decrease[ds]?)\b|\b(?:increase[ds]?|raise|decrease[ds]?)\b.*\b(?:salary|pay|income|price)\b/i, 'percentage-change'],
+  [/\b(?:how many|number of|quantity of)\b.*\btiles?\b|\btiles?\b.*\b(?:room|floor|wall)\b/i, 'tile-quantity-estimate'],
+  [/\bhow (?:quickly|fast)\b.*\b(?:moving|travel|going)\b|\bdistance\s+(?:over|divided by)\s+time\b/i, 'average-speed'],
   [/\bforce\s+(?:over|divided by)\s+area\b/i, 'pressure-from-force-area'],
   [/\b(?:room|floor|wall)\s+area\b/i, 'rectangle-area'],
   [/\b(?:monthly loan payment|loan monthly payment|monthly payment on a loan)\b/i, 'loan-monthly-payment-estimate'],

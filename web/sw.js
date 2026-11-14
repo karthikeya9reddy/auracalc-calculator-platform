@@ -1,7 +1,8 @@
-const CACHE_NAME = 'auracalc-shell-v8';
-const RUNTIME_CACHE = 'auracalc-runtime-v8';
+const CACHE_NAME = 'auracalc-shell-v9';
+const RUNTIME_CACHE = 'auracalc-runtime-v9';
 const RUNTIME_LIMIT = 180;
 const APP_SHELL = [
+  '/feedback-client.mjs',
   '/', '/app.css', '/aura-theme.css', '/lenis.css', '/scroll.mjs', '/vendor/lenis.mjs', '/app.mjs', '/home-app.mjs', '/catalog-topics.mjs', '/unified-search.mjs', '/measurement-search.mjs', '/result-report.mjs', '/report.css', '/conversion-handoff.mjs', '/currency-core.mjs', '/currency/', '/currency/currency.mjs', '/builder-core.mjs', '/builder/', '/builder/builder.mjs', '/field-directory-page.mjs', '/storage.mjs', '/ads.mjs', '/manifest.webmanifest', '/icon.svg', '/unit-converter/', '/converters/', '/fields/', '/measure/', '/measure/photo/', '/measure/ar/', '/measure/speed/', '/measure/measure.css', '/measure/measure.mjs', '/measure/speed-core.mjs', '/measure/ar.mjs', '/measure/ar-core.mjs', '/measurement-core.mjs',
   '/catalog/public/formulas.mjs', '/catalog/public/converters.mjs', '/catalog/field-directory.mjs', '/catalog/field-tool-index.mjs', '/catalog/field-route.mjs',
   '/catalog/public/percentage-change.mjs', '/catalog/public/rectangle-area.mjs',

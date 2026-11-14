@@ -1,5 +1,13 @@
 # AuraCalc Calculator Platform
 
+## v1.1 development — Reforge in progress
+
+Work takes place on `aura-v1.1`; the full Reforge upgrade is not complete. See [the engineering record](REFORGE_ENGINEERING_REPORT.md) for implemented changes, test evidence and remaining work.
+
+Open `/scientific/` on your local site for the new arithmetic/scientific workspace. It supports real-number expressions, degree/radian modes, memory and session history. Results use floating-point arithmetic; complex numbers and arbitrary precision are not supported.
+
+The development feedback form now sends messages to a server. Under `npm.cmd run dev`, submissions are stored in the ignored `.local-feedback/` directory, outside the public website. The owner can read them with `node scripts/read-feedback.mjs`. Public delivery requires the documented Cloudflare D1 binding and migration; a static preview alone cannot accept feedback. A message is reported as received only after the server confirms storage.
+
 AuraCalc is a responsive, statically deployable calculator website backed by a shared, dependency-free calculation engine. The Emergent-inspired homepage now uses the provided visual direction; the current live catalog is a small, source-backed set. Its 48-field directory is a research map, not a claim that every field has a finished calculator.
 
 ## Run the website locally
@@ -56,7 +64,7 @@ The checks use Node’s built-in test runner. Lenis is bundled locally for smoot
 - Typed, dimension-checked area-to-volume handoff with formula-version provenance
 - Localized numeric input/display options, responsive layout, dark theme, keyboard search shortcut, and reduced-motion styling
 - Device-local result history with view, restore, delete, pause, and clear controls
-- Readable print/Save as PDF reports and text downloads containing inputs, recorded method steps, results, precision notes and sources; local feedback capture/export, generated calculator information pages, and a static build
+- Readable print/Save as PDF reports and text downloads containing inputs, recorded method steps, results, precision notes and sources; server-backed feedback capture with legacy local-draft export, generated calculator information pages, and a static build
 - Shared search with bounded typo tolerance, selected natural-language intents, and exact conversion-quantity prefill such as `500 N to lbf`. Prefilled values remain editable and require Calculate.
 - Scientific display for tiny nonzero and very large results, malformed-history isolation, and stricter range/semantic checks on connected calculations
 - A consent-gated advertising adapter interface; no ad provider is connected
@@ -68,7 +76,7 @@ The checks use Node’s built-in test runner. Lenis is bundled locally for smoot
 - Starter release records show developer self-review and executable reference cases; no independent domain review is recorded. “Published” here means included in this local product catalog, not deployed publicly.
 - The unit registry and locale support are curated subsets, not exhaustive global coverage. Precision and rounding metadata do not yet select decimal or arbitrary-precision backends.
 - Search uses local metadata and synonyms. Photo AI requires the optional local server configuration. The AR tool requires compatible hardware and is an estimate; automatic object dimensions, depth reconstruction, and camera-based object-speed tracking are not implemented.
-- History and feedback are stored in the current browser profile. Feedback is not transmitted to the project owner. Sensitive values should not be stored on a shared device.
+- Calculation history stays in the current browser profile. Feedback is sent to the configured server; public delivery needs the D1 setup described in the Reforge record. Sensitive values should not be stored on a shared device or included in feedback.
 - The service worker installs a small shell and bounds its visited-resource cache to 180 entries. It does not download the whole catalog on install. Offline behavior is covered by simulated tests; physical-device offline behavior still needs checking.
 - Browser checks cover selected calculator, Studio, photo measurement, navigation, export and responsive flows. Public deployment, real-device AR, load testing, screen-reader testing and production-host verification remain outstanding. No million-user capacity claim has been established.
 

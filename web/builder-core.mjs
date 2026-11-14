@@ -1,7 +1,24 @@
 const MAX_EXPRESSION = 400;
+function integerCount(value) {
+  if (!Number.isSafeInteger(value) || value < 0 || value > 170) throw new Error('Use a whole number from 0 to 170.');
+  return value;
+}
+function factorial(n) { integerCount(n); let result = 1; for (let i = 2; i <= n; i++) result *= i; return result; }
+function combinations(n, r) {
+  integerCount(n); integerCount(r); if (r > n) throw new Error('Selection size cannot exceed the total.');
+  r = Math.min(r, n-r); let result = 1;
+  for (let i = 1; i <= r; i++) result *= (n-r+i)/i;
+  return result;
+}
+function permutations(n, r) {
+  integerCount(n); integerCount(r); if (r > n) throw new Error('Selection size cannot exceed the total.');
+  let result = 1; for (let i = 0; i < r; i++) result *= n-i; return result;
+}
 const FUNCTIONS = Object.freeze({
   sqrt: [1, Math.sqrt], abs: [1, Math.abs], ln: [1, Math.log], log: [1, Math.log10],
   exp: [1, Math.exp], sin: [1, Math.sin], cos: [1, Math.cos], tan: [1, Math.tan],
+  asin: [1, Math.asin], acos: [1, Math.acos], atan: [1, Math.atan],
+  factorial: [1, factorial], ncr: [2, combinations], npr: [2, permutations], mod: [2, (a,b) => a % b],
   floor: [1, Math.floor], ceil: [1, Math.ceil], round: [1, Math.round],
   min: [2, Math.min], max: [2, Math.max], pi: [0, () => Math.PI], e: [0, () => Math.E],
 });

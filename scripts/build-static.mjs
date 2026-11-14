@@ -58,7 +58,7 @@ await generateStudioPage(projectRoot, outputRoot);
 if (baseUrl) {
   const fieldToolMap = createFieldToolIndex(publicDefinitions);
   const indexableFieldRoutes = FIELD_DIRECTORY.filter(field => fieldToolMap.get(field).length > 0).map(fieldRoute);
-  const routes = ['/', '/converters/', '/currency/', '/builder/', '/fields/', '/measure/', '/measure/photo/', '/measure/ar/', '/measure/speed/', ...publicDefinitions.map(definition => `/calculators/${definition.id}/`), ...publicConverterDefinitions.map(definition => `/converters/${definition.id}/`), ...indexableFieldRoutes];
+  const routes = ['/', '/scientific/', '/converters/', '/currency/', '/builder/', '/fields/', '/measure/', '/measure/photo/', '/measure/ar/', '/measure/speed/', ...publicDefinitions.map(definition => `/calculators/${definition.id}/`), ...publicConverterDefinitions.map(definition => `/converters/${definition.id}/`), ...indexableFieldRoutes];
   const entries = routes.map(route => `  <url><loc>${new URL(route, baseUrl).href}</loc></url>`).join('\n');
   await writeFile(resolve(outputRoot, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries}\n</urlset>\n`, 'utf8');
   for (const route of routes) {

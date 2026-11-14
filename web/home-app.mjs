@@ -2,7 +2,7 @@ import { listPublicCalculators } from '/catalog/public/formulas.mjs';
 import { FIELD_DIRECTORY } from '/catalog/field-directory.mjs';
 import { createFieldToolIndex } from '/catalog/field-tool-index.mjs';
 import { fieldRoute } from '/catalog/field-route.mjs';
-import { catalogTopics } from './catalog-topics.mjs';
+import { catalogTopics, topicsForTool } from './catalog-topics.mjs';
 import { makeSearchIndex, searchIndex, searchTokens, matchesSearchText } from './unified-search.mjs';
 import { MEASUREMENT_TOOLS } from './measurement-search.mjs';
 import { attachConversionQuery } from './conversion-query.mjs';
@@ -145,7 +145,7 @@ function matchingCalculators() {
     ? searchIndex(calculatorSearchIndex ??= makeSearchIndex(calculators), activeQuery, Infinity)
     : calculators;
   return candidates.filter(definition => {
-    if (activeCategory !== 'All tools' && definition.category !== activeCategory) return false;
+    if (activeCategory !== 'All tools' && !topicsForTool(definition).includes(activeCategory)) return false;
     if (favoritesOnly && !favorites.includes(definition.id)) return false;
     return hasTokens || !/convert|conversion/i.test(activeQuery);
   });
@@ -205,6 +205,10 @@ function renderSearchAdditions(itemCount = matchingCalculators().length) {
       const matchingMeasurements = searchIndex(measurementSearchIndex ??= makeSearchIndex(MEASUREMENT_TOOLS), query, 3);
       const currencyMatch = /currency|exchange|forex|\b(?:usd|eur|inr|gbp|jpy|dollar|rupee|euro|yen)\b/i.test(query);
       const builderMatch = /builder|build (?:a |my |your )?calculator|custom (?:formula|calculator)|create (?:a |my |your )?calculator/i.test(query);
+      if (/scientific|arithmetic|basic calculator|normal calculator|trigonometry|factorial/i.test(query)) {
+        const section = node('section', 'search-result-group'); section.append(node('h3', '', 'Scientific workspace'));
+        const link = node('a', '', 'Scientific calculator · arithmetic, trigonometry and memory'); link.href = '/scientific/'; section.append(link); additions.append(section); extraMatches++;
+      }
       if (matchingMeasurements.length) { const section = node('section', 'search-result-group'); section.append(node('h3', '', 'Measurement tools')); const links = node('div', 'search-result-links'); for (const tool of matchingMeasurements) { const link = node('a', '', tool.title); link.href = tool.href; links.append(link); } section.append(links); additions.append(section); extraMatches += matchingMeasurements.length; }
       if (builderMatch) { const section = node('section', 'search-result-group'); section.append(node('h3', '', 'Build your own')); const links = node('div', 'search-result-links'); const link = node('a', '', 'Personal formula builder'); link.href = '/builder/'; links.append(link); section.append(links); additions.append(section); extraMatches++; }
       if (matchingFields.length) {

@@ -1,4 +1,5 @@
 import { listPublicCalculators } from '/catalog/public/formulas.mjs';
+import { connectFeedback } from './feedback-client.mjs';
 import {
   BASE_DIMENSIONS,
   CalculationError,
@@ -18,7 +19,6 @@ import {
   exportFeedback,
   getHistory,
   historyEnabled,
-  saveFeedback,
   saveHistoryRecord,
   setHistoryEnabled,
 } from './storage.mjs';
@@ -471,6 +471,12 @@ function renderCalculatorPage(definition, runtime) {
       workflowContext = { ...(workflowContext || {}), steps, ...(currencyControl ? { currencyCode } : workflowContext?.currencyCode ? { currencyCode: workflowContext.currencyCode } : {}) };
       currentCalculation.workflowContext = workflowContext;
       renderCalculationResult(definition, result, rawInputs, resultCard, pendingHandoff, workflowContext);
+      resultCard.tabIndex = -1;
+      resultCard.focus({ preventScroll: true });
+      const bounds = resultCard.getBoundingClientRect();
+      if (bounds.top < 100 || bounds.top > innerHeight - 160) {
+        resultCard.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+      }
     } catch (calculationError) {
       currentCalculation = null;
       const message = calculationError instanceof CalculationError
@@ -1377,30 +1383,12 @@ function setupFeedback() {
   const form = document.querySelector('#feedbackForm');
   if (!form) return;
   const status = document.querySelector('#feedbackStatus');
-  form.addEventListener('submit', event => {
-    event.preventDefault();
-    if (!form.reportValidity()) return;
-    const message = form.elements.feedbackMessage.value.trim();
-    if (!message) return;
-    try {
-      const result = saveFeedback({
-        id: crypto.randomUUID(),
-        type: form.elements.feedbackType.value,
-        message,
-        createdAt: new Date().toISOString(),
-        page: location.pathname,
-      });
-      if (status) {
-        if (result.saved) status.textContent = 'Saved on this device. Export your feedback file to share it with the AuraCalc team.';
-        else if (result.reason === 'limit') status.textContent = 'Local feedback storage reached its 100-entry limit; export saved feedback before saving more.';
-        else if (result.reason === 'storage-full') status.textContent = 'This browser’s local storage is full. Export feedback and free local storage before trying again.';
-        else status.textContent = 'This browser could not save feedback locally. You can continue using the site.';
-      }
-      if (result.saved) form.elements.feedbackMessage.value = '';
-    } catch {
-      if (status) status.textContent = 'This browser could not save feedback locally.';
-    }
-  });
+  const reported = new URLSearchParams(location.search).get('calculator');
+  if (reported && /^[a-z0-9-]+$/.test(reported)) {
+    form.elements.feedbackPage.value = `/calculators/${reported}/`;
+    form.elements.feedbackType.value = 'calculation';
+  }
+  connectFeedback(form, status);
   document.querySelector('#exportFeedback')?.addEventListener('click', () => {
     const feedback = exportFeedback();
     if (!feedback.length) {

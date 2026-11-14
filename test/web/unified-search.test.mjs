@@ -4,6 +4,16 @@ import { makeSearchIndex, searchIndex, matchesSearchText } from '../../web/unifi
 import { listPublicConverters } from '../../catalog/public/index.mjs';
 import { listPublicCalculators } from '../../catalog/public/index.mjs';
 
+test('problem descriptions find salary change, tile requirements and motion tools first', () => {
+  const index = makeSearchIndex(listPublicCalculators());
+  for (const [query, id] of [
+    ['I want to find how much percentage my salary increased', 'percentage-change'],
+    ['How many tiles do I need for my room?', 'tile-quantity-estimate'],
+    ['How quickly is this moving?', 'average-speed'],
+    ['distance divided by time', 'average-speed'],
+  ]) assert.equal(searchIndex(index, query)[0]?.id, id, query);
+});
+
 test('unified search finds converter pages using everyday terms and abbreviations', () => {
   const index = makeSearchIndex(listPublicConverters());
   assert.ok(searchIndex(index, 'meters to kilometers converter').some(item => item.id === 'convert-meters-to-kilometers'));
