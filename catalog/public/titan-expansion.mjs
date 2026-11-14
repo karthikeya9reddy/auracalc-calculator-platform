@@ -283,8 +283,8 @@ const specifications = [
     inputs: [['inductance', 'Inductance', 'H'], ['resistance', 'Series resistance', 'ohm']], outputs: [['time-constant', 'RL time constant', 's']], solve: v => v.inductance / v.resistance, example: { inputs: { inductance: 0.5, resistance: 10 }, expected: 0.05 },
   },
   {
-    id: 'rc-capacitor-charging-voltage', title: 'RC capacitor charging voltage at elapsed time', discipline: 'Electrical engineering', fields: ['Electrical engineering and power systems', 'Electronics and embedded hardware'], category: 'Circuit transients', formula: 'Vc(t) = Vs(1 − e^(−t/RC))', source: 'electric', visualization: 'circuit',
-    inputs: [['supply-voltage', 'Ideal step supply voltage', 'V'], ['resistance', 'Series resistance', 'ohm'], ['capacitance', 'Capacitance', 'F'], ['elapsed-time', 'Elapsed time after the step', 's']], outputs: [['capacitor-voltage', 'Capacitor voltage', 'V']], solve: v => v['supply-voltage'] * (1 - Math.exp(-v['elapsed-time'] / (v.resistance * v.capacitance))), example: { inputs: { 'supply-voltage': 10, resistance: 1000, capacitance: 0.001, 'elapsed-time': 1 }, expected: 10 * (1 - Math.exp(-1)) },
+    id: 'rc-capacitor-charging-voltage', version: '1.0.1', title: 'RC capacitor charging voltage at elapsed time', discipline: 'Electrical engineering', fields: ['Electrical engineering and power systems', 'Electronics and embedded hardware'], category: 'Circuit transients', formula: 'Vc(t) = Vs(1 − e^(−t/RC))', source: 'electric', visualization: 'circuit',
+    inputs: [['supply-voltage', 'Ideal step supply voltage', 'V'], ['resistance', 'Series resistance', 'ohm'], ['capacitance', 'Capacitance', 'F'], ['elapsed-time', 'Elapsed time after the step', 's']], outputs: [['capacitor-voltage', 'Capacitor voltage', 'V']], solve: v => -v['supply-voltage'] * Math.expm1(-v['elapsed-time'] / (v.resistance * v.capacitance)), example: { inputs: { 'supply-voltage': 10, resistance: 1000, capacitance: 0.001, 'elapsed-time': 1 }, expected: 10 * (1 - Math.exp(-1)) },
   },
   {
     id: 'rc-capacitor-discharge-voltage', title: 'RC capacitor discharge voltage at elapsed time', discipline: 'Electrical engineering', fields: ['Electrical engineering and power systems', 'Electronics and embedded hardware'], category: 'Circuit transients', formula: 'V(t) = V₀e^(−t/RC)', source: 'electric', visualization: 'circuit',
@@ -461,6 +461,7 @@ function makeCalculator(spec) {
   const reference = SOURCES[spec.source];
   return educationalDefinition({
     id: spec.id,
+    version: spec.version,
     title: spec.title,
     discipline: spec.discipline,
     fields: spec.fields,

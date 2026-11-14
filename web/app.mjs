@@ -1,5 +1,4 @@
-import { listPublicCalculators, listPublicConverters } from '/catalog/public/index.mjs';
-import { FIELD_DIRECTORY } from '/catalog/field-directory.mjs';
+import { listPublicCalculators } from '/catalog/public/formulas.mjs';
 import {
   BASE_DIMENSIONS,
   CalculationError,
@@ -17,7 +16,6 @@ import {
   clearHistory,
   deleteHistoryRecord,
   exportFeedback,
-  getFeedback,
   getHistory,
   historyEnabled,
   saveFeedback,
@@ -39,11 +37,29 @@ import { outputConversionPayload } from './conversion-handoff.mjs';
 import { makeSearchIndex, searchIndex, searchTokens, matchesSearchText } from './unified-search.mjs';
 
 const calculators = listPublicCalculators();
-const converters = listPublicConverters();
 const calculatorById = new Map(calculators.map(definition => [definition.id, definition]));
-const converterById = new Map(converters.map(definition => [definition.id, definition]));
-const toolById = new Map([...calculatorById, ...converterById]);
-const inputAssistant = new InputAssistant({ calculators, converters, getLocale: () => locale, getCurrencyCode: () => activeCurrencyCode });
+let converterCatalogRequest;
+let converterById = new Map();
+
+function loadConverters() {
+  converterCatalogRequest ??= import('/catalog/public/converters.mjs')
+    .then(({ listPublicConverters }) => {
+      const converters = listPublicConverters();
+      converterById = new Map(converters.map(definition => [definition.id, definition]));
+      return converters;
+    })
+    .catch(error => {
+      converterCatalogRequest = null;
+      throw error;
+    });
+  return converterCatalogRequest;
+}
+
+function findTool(id) {
+  return calculatorById.get(id) || converterById.get(id);
+}
+
+let inputAssistant;
 const historyDialog = document.querySelector('#historyDialog');
 const recordDialog = document.querySelector('#historyRecordDialog');
 const toastElement = document.querySelector('#toast');
@@ -51,34 +67,8 @@ const DEFAULT_LOCALE = 'en-US';
 const SUPPORTED_LOCALES = new Set(['en-US', 'en-GB', 'de-DE', 'fr-FR', 'hi-IN']);
 const FALLBACK_CURRENCIES = ['USD','EUR','GBP','INR','CAD','AUD','JPY','CNY','CHF','NZD','SGD','HKD','KRW','BRL','MXN','ZAR','AED','SAR','TRY','SEK','NOK','DKK','PLN','THB','IDR','MYR','PHP','PKR','LKR','NPR','BDT','NGN','KES','EGP','ILS','TWD','RUB','VND','ARS','CLP','COP','PEN','CZK','HUF','RON','UAH'];
 const CURRENCY_CODES = new Set(typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('currency') : FALLBACK_CURRENCIES);
-const CATEGORY_ORDER = ['All tools', ...new Set(calculators.map(item => item.category))];
-const SEARCH_TERMS = {
-  'percentage-change': ['percent', 'percentage', 'increase', 'decrease', 'discount change', 'growth rate', 'how much more', 'how much less'],
-  'rectangle-area': ['area', 'perimeter', 'room', 'wall', 'floor', 'rectangle', 'square metres', 'square feet', 'home project'],
-  'rectangular-prism-volume': ['volume', 'capacity', 'box', 'prism', 'concrete estimate', 'fill', 'depth'],
-  'average-speed': ['speed', 'distance', 'time', 'travel', 'pace', 'velocity', 'journey'],
-};
-const FIELD_TOOL_MAP = new Map([
-  ['Mathematics and arithmetic', ['percentage-change', 'rectangle-area']],
-  ['Physics, astronomy, astrophysics, and cosmology', ['average-speed']],
-  ['Education, assessment, and learning', ['percentage-change', 'rectangle-area', 'rectangular-prism-volume', 'average-speed']],
-  ['Everyday conversions, cooking, and household projects', ['percentage-change', 'rectangle-area', 'rectangular-prism-volume']],
-  ['Travel, time, fitness, and sports calculations', ['average-speed']],
-]);
-const FIELD_HIGHLIGHTS = [
-  'Everyday conversions, cooking, and household projects',
-  'Mathematics and arithmetic',
-  'Personal and corporate finance',
-  'Education, assessment, and learning',
-  'Civil engineering',
-  'Physics, astronomy, astrophysics, and cosmology',
-];
-
 let locale = getInitialLocale();
 let activeCurrencyCode = getInitialCurrencyCode();
-let activeCategory = 'All tools';
-let activeQuery = '';
-let fieldDirectoryExpanded = false;
 let workflowContext = null;
 let pendingHandoff = null;
 let currentHistoryRecord = null;
@@ -140,49 +130,12 @@ function normaliseText(value) {
   return String(value || '').toLocaleLowerCase(locale).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
-function queryMatches(text, query) {
-  const corpus = normaliseText(text);
-  const normalizedQuery = normaliseText(query);
-  if (!normalizedQuery) return true;
-  const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
-  return corpus.includes(normalizedQuery) || tokens.every(token => corpus.includes(token));
-}
-
-function calculatorSearchScore(definition, query) {
-  const title = normaliseText(definition.title);
-  const category = normaliseText(`${definition.category} ${definition.discipline}`);
-  const terms = normaliseText((definition.keywords || []).join(' '));
-  const body = normaliseText(`${definition.id} ${definition.description} ${definition.purpose} ${definition.method.description} ${(SEARCH_TERMS[definition.id] || []).join(' ')}`);
-  const tokens = normaliseText(query).split(/\s+/).filter(Boolean);
-  if (!tokens.length) return 1;
-  const combined = `${title} ${category} ${terms} ${body}`;
-  if (!tokens.every(token => combined.includes(token))) return 0;
-  let score = title.includes(normaliseText(query)) ? 9 : 0;
-  for (const token of tokens) {
-    if (title.includes(token)) score += 5;
-    else if (terms.includes(token)) score += 4;
-    else if (category.includes(token)) score += 3;
-    else if (body.includes(token)) score += 1;
-  }
-  return score;
-}
-
 function showToast(message) {
   if (!toastElement) return;
   toastElement.textContent = message;
   toastElement.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toastElement.classList.remove('show'), 3200);
-}
-
-function setNotice(title, message) {
-  const dialog = document.querySelector('#noticeDialog');
-  if (!dialog) return;
-  const titleElement = dialog.querySelector('#noticeTitle');
-  const messageElement = dialog.querySelector('#noticeText');
-  if (titleElement) titleElement.textContent = title;
-  if (messageElement) messageElement.textContent = message;
-  if (!dialog.open) dialog.showModal();
 }
 
 function safeStorageSet(storage, key, value) {
@@ -216,15 +169,6 @@ function downloadText(filename, text) {
 function calculatorPath(id) {
   if (converterById.has(id)) return `/converters/${encodeURIComponent(id)}/`;
   return `/calculators/${encodeURIComponent(id)}/`;
-}
-
-function iconFor(id) {
-  return ({
-    'percentage-change': '%',
-    'rectangle-area': '▱',
-    'rectangular-prism-volume': '◫',
-    'average-speed': '↗',
-  })[id] || '∑';
 }
 
 function setupLocaleControl() {
@@ -296,125 +240,6 @@ function setupGeneratedPageMenu() {
   });
 }
 
-function renderCalculatorCards() {
-  const grid = document.querySelector('#calculatorGrid');
-  const tabs = document.querySelector('#categoryTabs');
-  if (!grid || !tabs) return;
-  tabs.replaceChildren();
-  for (const category of CATEGORY_ORDER) {
-    const button = node('button', 'category-tab', category);
-    button.type = 'button';
-    button.setAttribute('aria-pressed', String(category === activeCategory));
-    button.addEventListener('click', () => {
-      activeCategory = category;
-      updateCatalog();
-      renderCalculatorCards();
-    });
-    tabs.append(button);
-  }
-  grid.replaceChildren();
-  const matching = calculators.map(definition => ({ definition, score: calculatorSearchScore(definition, activeQuery) })).filter(item => {
-    const { definition } = item;
-    if (activeCategory !== 'All tools' && definition.category !== activeCategory) return false;
-    return item.score > 0;
-  }).sort((left, right) => right.score - left.score).map(item => item.definition);
-  for (const definition of matching) {
-    const link = node('a', 'calculator-card');
-    link.href = calculatorPath(definition.id);
-    link.setAttribute('aria-label', `${definition.title}. Open calculator.`);
-    const top = node('div', 'card-topline');
-    top.append(node('span', 'card-symbol', iconFor(definition.id)), node('span', 'card-risk', definition.riskClass));
-    link.append(top, node('h3', '', definition.title), node('p', '', definition.description));
-    const footer = node('div', 'card-footer');
-    footer.append(node('span', '', `${definition.category} · ${definition.inputs.length} inputs`), node('span', 'card-arrow', '↗'));
-    link.append(footer);
-    grid.append(link);
-  }
-  const empty = document.querySelector('#emptyState');
-  if (empty) {
-    empty.hidden = matching.length > 0;
-    if (activeQuery) empty.textContent = `No published calculator matches “${activeQuery}” yet. Browse the field map below to see whether the topic is in the research scope.`;
-  }
-  const count = document.querySelector('#catalogCount');
-  if (count) count.textContent = `${calculators.length} published starter tools · ${FIELD_DIRECTORY.length} research field groups mapped`;
-}
-
-function updateCatalog() {
-  renderCalculatorCards();
-  const input = document.querySelector('#siteSearch');
-  if (input && input.value !== activeQuery) input.value = activeQuery;
-  renderFieldDirectory();
-}
-
-function renderFieldDirectory() {
-  const grid = document.querySelector('#fieldGrid');
-  const toggle = document.querySelector('#toggleFields');
-  const status = document.querySelector('#fieldStatus');
-  if (!grid) return;
-  grid.replaceChildren();
-  const visible = FIELD_DIRECTORY.filter(name => !activeQuery || queryMatches(name, activeQuery)
-    || (FIELD_TOOL_MAP.get(name) || []).some(id => queryMatches(`${SEARCH_TERMS[id]?.join(' ') || ''} ${(calculatorById.get(id)?.keywords || []).join(' ')}`, activeQuery)));
-  const shown = fieldDirectoryExpanded || activeQuery ? visible : visible.filter(name => FIELD_HIGHLIGHTS.includes(name));
-  for (const [index, name] of FIELD_DIRECTORY.entries()) {
-    if (!shown.includes(name)) continue;
-    const linkedTools = FIELD_TOOL_MAP.get(name) || [];
-    const card = node('article', `field-card${linkedTools.length ? ' has-tools' : ''}`);
-    const number = node('span', 'field-index', String(index + 1).padStart(2, '0'));
-    const copy = node('div', 'field-copy');
-    copy.append(node('strong', '', name));
-    copy.append(node('small', '', linkedTools.length ? `${linkedTools.length} related general-purpose tool${linkedTools.length === 1 ? '' : 's'}` : 'Research map · no published tool yet'));
-    card.append(number, copy);
-    grid.append(card);
-  }
-  if (status) {
-    status.textContent = activeQuery
-      ? `${visible.length} research field${visible.length === 1 ? '' : 's'} match “${activeQuery}”.`
-      : fieldDirectoryExpanded ? `Showing all ${FIELD_DIRECTORY.length} research field groups.` : 'Showing the six highlighted groups; all 48 are available.';
-  }
-  if (toggle) {
-    toggle.hidden = Boolean(activeQuery);
-    toggle.setAttribute('aria-expanded', String(fieldDirectoryExpanded));
-    toggle.innerHTML = fieldDirectoryExpanded ? 'Show highlights <span aria-hidden="true">↑</span>' : `Browse all ${FIELD_DIRECTORY.length} fields <span aria-hidden="true">↓</span>`;
-  }
-}
-
-function initHome() {
-  if (!document.querySelector('#calculatorGrid')) return;
-  renderCalculatorCards();
-  renderFieldDirectory();
-  const search = document.querySelector('#siteSearch');
-  const form = document.querySelector('#searchForm');
-  search?.addEventListener('input', () => {
-    activeQuery = search.value.trim();
-    updateCatalog();
-  });
-  form?.addEventListener('submit', event => {
-    event.preventDefault();
-    activeQuery = search?.value.trim() || '';
-    updateCatalog();
-    document.querySelector('#calculators')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-  document.querySelectorAll('[data-search]').forEach(button => button.addEventListener('click', () => {
-    activeQuery = button.dataset.search || '';
-    updateCatalog();
-    search?.focus();
-    document.querySelector('#calculators')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }));
-  document.querySelector('#toggleFields')?.addEventListener('click', () => {
-    fieldDirectoryExpanded = !fieldDirectoryExpanded;
-    renderFieldDirectory();
-  });
-  const feedbackParams = new URLSearchParams(location.search);
-  const feedbackType = document.querySelector('#feedbackType');
-  if (feedbackParams.has('feedback') && feedbackType) {
-    feedbackType.value = feedbackParams.get('feedback');
-    const calculatorId = feedbackParams.get('calculator');
-    const feedbackMessage = document.querySelector('#feedbackMessage');
-    if (calculatorId && feedbackMessage) feedbackMessage.value = `Possible issue with ${calculatorId}: `;
-    setTimeout(() => document.querySelector('#feedback')?.scrollIntoView({ behavior: 'smooth' }), 150);
-  }
-}
-
 function inputHelp(field) {
   const hints = [];
   if (field.required === false) hints.push('Optional — leave blank if this is the value you want to solve for');
@@ -467,6 +292,9 @@ function buildQuantityControl(field, initial = undefined, definition, form) {
   guidance.id = `${inputId}-help`;
   guidanceRow.append(guidance);
   if (definition.catalogKind !== 'converter') {
+    inputAssistant ??= new InputAssistant({
+      calculators, loadConverters, getLocale: () => locale, getCurrencyCode: () => activeCurrencyCode,
+    });
     guidanceRow.append(inputAssistant.createHelpButton(form, definition, field, { path: [definition.id] }));
   }
   wrapper.append(guidanceRow);
@@ -557,7 +385,7 @@ function renderCalculatorPage(definition, runtime) {
   if (pendingHandoff) {
     const source = pendingHandoff.source;
     const carriedCurrency = pendingHandoff.currencyCode ? ` · ${pendingHandoff.currencyCode}` : '';
-    const handoffBanner = node('div', 'workflow-provenance', `Filled from ${toolById.get(source.calculatorId)?.title || source.calculatorId} · ${formatNumber(pendingHandoff.value)} ${getUnit(pendingHandoff.unit).symbol}${carriedCurrency}. Check or edit this value before continuing.`);
+    const handoffBanner = node('div', 'workflow-provenance', `Filled from ${findTool(source.calculatorId)?.title || source.calculatorId} · ${formatNumber(pendingHandoff.value)} ${getUnit(pendingHandoff.unit).symbol}${carriedCurrency}. Check or edit this value before continuing.`);
     formCard.append(handoffBanner);
   }
   if (pendingMeasurement) {
@@ -744,7 +572,7 @@ function renderCalculationResult(definition, result, rawInputs, resultCard, hand
   const visual = renderCalculationVisual(definition, result, locale);
   if (visual) resultCard.append(visual);
   if (handoff) {
-    const sourceTitle = toolById.get(handoff.source.calculatorId)?.title || handoff.source.calculatorId;
+    const sourceTitle = findTool(handoff.source.calculatorId)?.title || handoff.source.calculatorId;
     resultCard.append(node('div', 'workflow-provenance', `This step used a value from ${sourceTitle} (${handoff.source.methodVersion}). The workflow record is saved with this result.`));
   }
   for (const warning of result.warnings) resultCard.append(node('p', 'result-warnings', warning));
@@ -1022,9 +850,16 @@ function resultSummary(definition, result, currencyCode = activeCurrencyCode) {
   return definition.outputs.map(field => `${field.label}: ${formatOutput(definition, field, result.outputs[field.id], result.outputs[field.id].unit, currencyCode)}`).join(' · ');
 }
 
-function initCalculatorPage() {
+async function initCalculatorPage() {
   const runtime = document.querySelector('#calculatorRuntime');
   if (!runtime) return;
+  if (runtime.dataset.catalogKind === 'converter') {
+    try { await loadConverters(); }
+    catch {
+      runtime.textContent = 'Could not load this converter. Reconnect and reload the page.';
+      return;
+    }
+  }
   const definition = runtime.dataset.catalogKind === 'converter'
     ? converterById.get(runtime.dataset.calculatorId)
     : calculatorById.get(runtime.dataset.calculatorId);
@@ -1273,7 +1108,7 @@ function initUnitConverter() {
   initConverterDirectory();
 }
 
-function initConverterDirectory() {
+async function initConverterDirectory() {
   const grid = document.querySelector('#converterDirectoryGrid');
   const search = document.querySelector('#converterDirectorySearch');
   const count = document.querySelector('#converterDirectoryCount');
@@ -1281,19 +1116,25 @@ function initConverterDirectory() {
   if (!grid || !search || !count || !more) return;
   const pageSize = 40;
   const currency = { id: 'currency-exchange', title: 'Currency converter', category: 'Money and currencies', discipline: 'Finance', description: 'Convert currency using the latest available dated reference rates.', keywords: ['currency', 'exchange', 'foreign exchange', 'forex', 'usd eur inr gbp jpy dollar rupee euro pound yen'], fields: [], href: '/currency/' };
-  const directoryEntries = [currency, ...converters];
-  const index = makeSearchIndex(directoryEntries);
-  const calculatorIndex = makeSearchIndex(calculators);
+  let converters = [];
+  try { converters = await loadConverters(); }
+  catch { showToast('The converter list is unavailable. Reconnect and reload to browse all unit pairs.'); }
+  const directoryEntries = [currency, ...converters].sort((a, b) =>
+    Number(b.id === 'currency-exchange') - Number(a.id === 'currency-exchange')
+    || (a.category || a.discipline).localeCompare(b.category || b.discipline)
+    || a.title.localeCompare(b.title));
+  let index;
+  let calculatorIndex;
   let visibleLimit = pageSize;
   const matching = () => {
     const query = normaliseText(search.value);
     if (!query || !searchTokens(query).length) return directoryEntries;
-    return searchIndex(index, query, Infinity);
+    return searchIndex(index ??= makeSearchIndex(directoryEntries), query, Infinity);
   };
   const render = () => {
     const items = matching();
-    const related = search.value.trim() && searchTokens(search.value).length ? searchIndex(calculatorIndex, search.value, 4) : [];
-    const visible = (search.value.trim() && searchTokens(search.value).length ? items : [...items].sort((a, b) => Number(b.id === 'currency-exchange') - Number(a.id === 'currency-exchange') || (a.category || a.discipline).localeCompare(b.category || b.discipline) || a.title.localeCompare(b.title))).slice(0, visibleLimit);
+    const related = search.value.trim() && searchTokens(search.value).length ? searchIndex(calculatorIndex ??= makeSearchIndex(calculators), search.value, 4) : [];
+    const visible = items.slice(0, visibleLimit);
     count.textContent = `${formatNumber(items.length, { maximumFractionDigits: 0 })} ${items.length === 1 ? 'converter' : 'converters'}${related.length ? ` · ${related.length} related calculators` : ''}`;
     grid.replaceChildren();
     const groups = new Map();
@@ -1328,7 +1169,7 @@ function initConverterDirectory() {
 
 function formatHistorySummary(record) {
   if (record.summary) return record.summary;
-  const definition = toolById.get(record.calculatorId);
+  const definition = findTool(record.calculatorId);
   if (definition && record.result?.outputs) return resultSummary(definition, record.result, record.currencyCode || record.workflow?.currencyCode || activeCurrencyCode);
   return 'Saved result';
 }
@@ -1388,7 +1229,12 @@ function renderHistory() {
   }
 }
 
-function showHistoryRecord(record) {
+async function showHistoryRecord(record) {
+  if (record.calculatorId?.startsWith('convert-') && !converterById.has(record.calculatorId)) {
+    try { await loadConverters(); }
+    catch { /* The recorded outputs can still be shown without catalog labels. */ }
+    if (!historyDialog?.open) return;
+  }
   currentHistoryRecord = record;
   const title = document.querySelector('#historyRecordTitle');
   const content = document.querySelector('#historyRecordContent');
@@ -1397,7 +1243,7 @@ function showHistoryRecord(record) {
   content.replaceChildren();
   content.append(node('p', 'details-copy', `Original result · ${record.methodVersion || 'version unavailable'} · ${new Date(record.calculatedAt).toLocaleString(locale)}.`));
   const outputList = node('div', 'saved-result-list');
-  const definition = toolById.get(record.calculatorId);
+  const definition = findTool(record.calculatorId);
   if (definition && record.result?.outputs) {
     for (const field of definition.outputs) {
       const output = record.result.outputs[field.id];
@@ -1527,19 +1373,6 @@ function setupFeedback() {
   });
 }
 
-function setupKeyboardShortcut() {
-  document.addEventListener('keydown', event => {
-    if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
-    const target = event.target;
-    if (target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
-    const search = document.querySelector('#siteSearch');
-    if (search) {
-      event.preventDefault();
-      search.focus();
-    }
-  });
-}
-
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
   try { await navigator.serviceWorker.register('/sw.js'); } catch { /* Offline support is an enhancement, not a calculator dependency. */ }
@@ -1555,8 +1388,6 @@ setupMobileMenu();
 setupGeneratedPageMenu();
 setupHistory();
 setupFeedback();
-setupKeyboardShortcut();
-initHome();
 initCalculatorPage();
 initUnitConverter();
 registerServiceWorker();

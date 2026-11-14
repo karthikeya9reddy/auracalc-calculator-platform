@@ -32,9 +32,9 @@ function referenceList(references) {
   return references.map(reference => `<li><a href="${escapeHtml(reference.url || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(reference.citation)} ↗</a></li>`).join('');
 }
 
-export async function generateCalculatorPages(root = scriptRoot) {
-  const calculatorRoot = resolve(root, 'web', 'calculators');
-  const converterRoot = resolve(root, 'web', 'converters');
+export async function generateCalculatorPages(root = scriptRoot, webRoot = resolve(root, 'web')) {
+  const calculatorRoot = resolve(webRoot, 'calculators');
+  const converterRoot = resolve(webRoot, 'converters');
   const calculatorDefinitions = listPublicCalculators();
   const converterDefinitions = listPublicConverters();
   const calculatorIds = new Set(calculatorDefinitions.map(definition => definition.id));
@@ -89,40 +89,12 @@ export async function generateCalculatorPages(root = scriptRoot) {
 </body></html>`;
     await writeGenerated(resolve(folder, 'index.html'), page);
   }
-  await generateFieldPages(root, calculatorDefinitions);
-  const definitions = calculatorDefinitions;
-  const converterRouteLines = converterDefinitions.map(definition => `  '/converters/${definition.id}/',`).join('\n');
-  const workerPath = resolve(root, 'web', 'sw.js');
-  const worker = await readFile(workerPath, 'utf8');
-  const routeLines = definitions.map(definition => `  '/calculators/${definition.id}/',`).join('\n');
-  const updatedWorker = worker.replace(
-    /  \/\/ GENERATED_CALCULATOR_ROUTES_START[\s\S]*?  \/\/ GENERATED_CALCULATOR_ROUTES_END/,
-    `  // GENERATED_CALCULATOR_ROUTES_START\n${routeLines}\n  // GENERATED_CALCULATOR_ROUTES_END`,
-  );
-  if (updatedWorker === worker && !worker.includes('GENERATED_CALCULATOR_ROUTES_START')) {
-    throw new Error('Service worker calculator-route markers are missing.');
-  }
-  const updatedConverterWorker = updatedWorker.replace(
-    /  \/\/ GENERATED_CONVERTER_ROUTES_START[\s\S]*?  \/\/ GENERATED_CONVERTER_ROUTES_END/,
-    `  // GENERATED_CONVERTER_ROUTES_START\n${converterRouteLines}\n  // GENERATED_CONVERTER_ROUTES_END`,
-  );
-  if (updatedConverterWorker === updatedWorker && !worker.includes('GENERATED_CONVERTER_ROUTES_START')) {
-    throw new Error('Service worker converter-route markers are missing.');
-  }
-  const fieldRouteLines = FIELD_DIRECTORY.map(field => `  '${fieldRoute(field)}',`).join('\n');
-  const finalWorker = updatedConverterWorker.replace(
-    /  \/\/ GENERATED_FIELD_ROUTES_START[\s\S]*?  \/\/ GENERATED_FIELD_ROUTES_END/,
-    `  // GENERATED_FIELD_ROUTES_START\n${fieldRouteLines}\n  // GENERATED_FIELD_ROUTES_END`,
-  );
-  if (finalWorker === updatedConverterWorker && !worker.includes('GENERATED_FIELD_ROUTES_START')) {
-    throw new Error('Service worker field-route markers are missing.');
-  }
-  await writeGenerated(workerPath, finalWorker);
-  return Object.freeze({ calculators: definitions.length, converters: converterDefinitions.length });
+  await generateFieldPages(root, calculatorDefinitions, webRoot);
+  return Object.freeze({ calculators: calculatorDefinitions.length, converters: converterDefinitions.length });
 }
 
-export async function generateFieldPages(root = scriptRoot, definitions = listPublicCalculators()) {
-  const outputRoot = resolve(root, 'web', 'fields');
+export async function generateFieldPages(root = scriptRoot, definitions = listPublicCalculators(), webRoot = resolve(root, 'web')) {
+  const outputRoot = resolve(webRoot, 'fields');
   const fieldToolMap = createFieldToolIndex(definitions);
   const slugs = new Set();
   for (const [index, field] of FIELD_DIRECTORY.entries()) {
