@@ -56,6 +56,16 @@ function temperatureFixture(overrides = {}) {
   });
 }
 
+test('numeric parsing errors identify the field without changing the error code', () => {
+  const definition = publicFixture();
+  const [first] = definition.inputs;
+  assert.throws(
+    () => executeCalculation(definition, { [first.id]: { value: 'invalid', unit: first.canonicalUnit } }),
+    error => error instanceof CalculationError && error.details.fieldId === first.id
+      && error.code.startsWith('INVALID_') && error.message.startsWith(`${first.label}:`),
+  );
+});
+
 test('test fixtures are isolated from a production registry', () => {
   const registry = new CalculatorRegistry();
   assert.throws(() => registry.register(rectangleAreaFixture), { code: 'TEST_FIXTURE_NOT_ALLOWED' });

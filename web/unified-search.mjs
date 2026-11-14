@@ -20,14 +20,25 @@ function nearWord(a, b) {
 }
 function tokenMatch(text, words, token) {
   if (token.length < 3) return words.has(token);
-  return text.includes(token) || (token.length >= 5 && [...words].some(word => nearWord(token, word)));
+  if (text.includes(token)) return true;
+  if (token.length >= 5) {
+    for (const word of words) if (nearWord(token, word)) return true;
+  }
+  return false;
 }
 export function matchesSearchText(text, query) {
   const corpus = normalizeSearch(text), words = new Set(corpus.split(/[^\p{L}\p{N}]+/u));
   return searchTokens(query).every(token => tokenMatch(corpus, words, token));
 }
 const INTENTS = [
+  [/\b(?:salary|pay|income|price)\b.*\b(?:increase[ds]?|raise|decrease[ds]?)\b|\b(?:increase[ds]?|raise|decrease[ds]?)\b.*\b(?:salary|pay|income|price)\b/i, 'percentage-change'],
+  [/\b(?:how many|number of|quantity of)\b.*\btiles?\b|\btiles?\b.*\b(?:room|floor|wall)\b/i, 'tile-quantity-estimate'],
+  [/\bhow (?:quickly|fast)\b.*\b(?:moving|travel|going)\b|\bdistance\s+(?:over|divided by)\s+time\b/i, 'average-speed'],
   [/\bforce\s+(?:over|divided by)\s+area\b/i, 'pressure-from-force-area'],
+  [/\b(?:room|floor|wall)\s+area\b/i, 'rectangle-area'],
+  [/\b(?:monthly loan payment|loan monthly payment|monthly payment on a loan)\b/i, 'loan-monthly-payment-estimate'],
+  [/\bpressure\b.*\b(?:water depth|below the surface|stationary fluid)\b/i, 'hydrostatic-gauge-pressure'],
+  [/\belectricity\s+costs?\b/i, 'household-electricity-cost'],
   [/\b(?:electricity|energy)\b.*\b(?:computer|appliance)\b|\b(?:computer|appliance)\b.*\b(?:electricity|energy)\b/i, 'electrical-energy-power-time'],
 ];
 export function intentCalculatorIds(query) { return INTENTS.filter(([pattern]) => pattern.test(query)).map(([, id]) => id); }

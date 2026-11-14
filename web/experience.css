@@ -54,3 +54,15 @@
 @media(hover:hover){.workspace-tile:hover{transform:translateY(-3px)}}
 @media(max-width:700px){.workspace-gallery{margin:55px auto;width:calc(100% - 32px)}.workspace-grid{grid-template-columns:1fr}.workspace-intro{display:block}.workspace-intro > p{margin-top:20px}.workspace-tile{padding:25px}.workspace-measure{grid-template-columns:1fr}.workspace-measure-modes{grid-template-columns:1fr}.workspace-measure-modes a{display:flex;gap:12px;align-items:center;justify-content:space-between}.workspace-measure-modes span{margin:0}.measure-art{max-width:440px;margin:auto}}
 @media(prefers-reduced-motion:reduce){.measure-scan{animation:none}.workspace-tile,.workspace-link span{transition:none!important;transform:none!important}}
+.tool-page .result-card { scroll-margin-top: 120px; }
+.tool-page .result-card:focus-visible { outline: 2px solid #b2ff32; outline-offset: 5px; }
+.tool-page .details-copy,
+.tool-page .details-copy p,
+.tool-page .intermediate-list,
+.tool-page .tool-method-info p,
+.tool-page .method-source a { font-size: clamp(.95rem, .9rem + .15vw, 1.05rem); line-height: 1.75; }
+.tool-page .details-copy { max-width: 78ch; overflow-wrap: anywhere; }
+.tool-page .intermediate-list li { margin-block: .65em; }
+.tool-page .result-details summary { font-size: 1rem; padding-block: 1rem; }
+.tool-page .tool-method-info h2 { font-size: 1.2rem; }
+.tool-page .method-source small { font-size: .85rem; line-height: 1.6; }

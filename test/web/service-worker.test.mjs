@@ -16,7 +16,9 @@ test('offline cache installs a small shell, bypasses APIs and bounds visited res
   events.get('fetch')({request:{url:'https://test.local/api/vision/status',method:'GET'},respondWith:()=>intercepted=true});assert.equal(intercepted,false);
   async function request(path,mode='navigate'){let result,work;events.get('fetch')({request:{url:'https://test.local'+path,method:'GET',mode},respondWith:p=>result=p,waitUntil:p=>work=p});await work;return result;}
   for(let i=0;i<185;i++)await request('/tool-'+i);
-  assert.equal(stores.get('auracalc-runtime-v7').size,180);
+  const runtimeStores = [...stores.entries()].filter(([name]) => name.startsWith('auracalc-runtime-'));
+  assert.equal(runtimeStores.length, 1);
+  assert.equal(runtimeStores[0][1].size,180);
   online=false;assert.equal(await (await request('/not-yet-visited')).text(),'/offline.html');
   assert.equal(await (await request('/tool-184')).text(),'live');
 });
