@@ -436,7 +436,20 @@ function renderCalculatorPage(definition, runtime) {
   resultCard.append(renderEmptyResult());
   runtime.append(formCard, resultCard);
 
+  const clearFieldError = () => {
+    const invalid = form.querySelector('[aria-invalid="true"]');
+    if (!invalid) return;
+    invalid.removeAttribute('aria-invalid');
+    invalid.setAttribute('aria-describedby', `${invalid.id}-help`);
+    invalid.parentElement.querySelector('.field-error')?.remove();
+  };
+  form.addEventListener('input', event => {
+    if (event.target.getAttribute('aria-invalid') !== 'true') return;
+    clearFieldError();
+    error.hidden = true;
+  });
   form.addEventListener('reset', () => {
+    clearFieldError();
     error.hidden = true;
     currentCalculation = null;
     pendingHandoff = null;
@@ -444,8 +457,8 @@ function renderCalculatorPage(definition, runtime) {
   });
   form.addEventListener('submit', event => {
     event.preventDefault();
+    clearFieldError();
     error.hidden = true;
-    if (!form.reportValidity()) return;
     const rawInputs = readRawInputs(form, definition);
     try {
       const result = executeCalculation(definition, rawInputs, { locale });
@@ -463,7 +476,22 @@ function renderCalculatorPage(definition, runtime) {
       const message = calculationError instanceof CalculationError
         ? calculationError.message
         : 'This input could not be processed. Check the values and try again.';
-      error.textContent = message;
+      const field = form.elements.namedItem(calculationError?.details?.fieldId || '');
+      error.replaceChildren();
+      if (field instanceof HTMLInputElement && field.hasAttribute('data-field-id')) {
+        const inline = node('p', 'field-error', message);
+        inline.id = `${field.id}-error`;
+        field.parentElement.append(inline);
+        field.setAttribute('aria-invalid', 'true');
+        field.setAttribute('aria-describedby', `${field.id}-help ${inline.id}`);
+        const link = node('a', '', message);
+        link.href = `#${field.id}`;
+        link.addEventListener('click', event => {
+          event.preventDefault();
+          field.focus();
+        });
+        error.append(link);
+      } else error.textContent = message;
       error.hidden = false;
       error.tabIndex = -1;
       error.focus({ preventScroll: true });
@@ -1123,6 +1151,12 @@ async function initConverterDirectory() {
     Number(b.id === 'currency-exchange') - Number(a.id === 'currency-exchange')
     || (a.category || a.discipline).localeCompare(b.category || b.discipline)
     || a.title.localeCompare(b.title));
+  const categoryFilter = document.querySelector('#converterQuantityFilter');
+  for (const category of new Set(directoryEntries.map(entry => entry.category))) {
+    const option = node('option', '', category.replace(/ conversions$/, ''));
+    option.value = category;
+    categoryFilter?.append(option);
+  }
   let index;
   let calculatorIndex;
   let visibleLimit = pageSize;
@@ -1132,11 +1166,15 @@ async function initConverterDirectory() {
     return searchIndex(index ??= makeSearchIndex(directoryEntries), query, Infinity);
   };
   const render = () => {
-    const items = matching();
-    const related = search.value.trim() && searchTokens(search.value).length ? searchIndex(calculatorIndex ??= makeSearchIndex(calculators), search.value, 4) : [];
+    const category = categoryFilter?.value;
+    const items = matching().filter(entry => !category || entry.category === category);
+    const related = !category && searchTokens(search.value).length ? searchIndex(calculatorIndex ??= makeSearchIndex(calculators), search.value, 4) : [];
     const visible = items.slice(0, visibleLimit);
     count.textContent = `${formatNumber(items.length, { maximumFractionDigits: 0 })} ${items.length === 1 ? 'converter' : 'converters'}${related.length ? ` · ${related.length} related calculators` : ''}`;
     grid.replaceChildren();
+    if (!items.length && !related.length) {
+      grid.append(node('p', 'empty-state', 'No matching conversions. Try another unit or select All quantities.'));
+    }
     const groups = new Map();
     for (const definition of visible) {
       const category = definition.category || definition.discipline;
@@ -1163,6 +1201,7 @@ async function initConverterDirectory() {
     more.textContent = `Show ${Math.min(pageSize, remaining)} more ${remaining === 1 ? 'converter' : 'converters'}`;
   };
   search.addEventListener('input', () => { visibleLimit = pageSize; render(); });
+  categoryFilter?.addEventListener('change', () => { visibleLimit = pageSize; render(); });
   more.addEventListener('click', () => { visibleLimit += pageSize; render(); });
   render();
 }

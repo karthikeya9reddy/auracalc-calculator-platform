@@ -21,6 +21,10 @@ test('food energy search finds the calculator that asks for label information', 
 test('search understands natural intent, bounded typos, quantities and strict short unit tokens', () => {
   const calculators = makeSearchIndex(listPublicCalculators()), converters = makeSearchIndex(listPublicConverters());
   assert.equal(searchIndex(calculators,'force over area')[0].id,'pressure-from-force-area');
+  assert.equal(searchIndex(calculators,'calculate room area')[0].id,'rectangle-area');
+  assert.equal(searchIndex(calculators,'monthly loan payment')[0].id,'loan-monthly-payment-estimate');
+  assert.equal(searchIndex(calculators,'pressure below the surface')[0].id,'hydrostatic-gauge-pressure');
+  assert.equal(searchIndex(calculators,'how much electricity costs')[0].id,'household-electricity-cost');
   assert.equal(searchIndex(calculators,'how much electricity does my computer use')[0].id,'electrical-energy-power-time');
   assert.ok(searchIndex(calculators,'rectangel area').some(x=>x.id==='rectangle-area'));
   assert.ok(searchIndex(converters,'500 N to lbf').some(x=>x.id==='convert-newtons-to-pounds-force'));

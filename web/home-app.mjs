@@ -118,10 +118,6 @@ function calculatorIcon(definition, className = 'calc-icon') {
   return makeIcon(iconById[definition.id] || 'calculator', className);
 }
 
-function normalize(value) {
-  return String(value ?? '').toLocaleLowerCase(locale).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-}
-
 function formatNumber(value, options = {}) {
   return formatResultNumber(value, locale, options);
 }
@@ -307,8 +303,6 @@ function renderCatalog() {
   if (toolCount) toolCount.textContent = formatNumber(calculators.length, { maximumFractionDigits: 0 });
   const liveStatus = document.querySelector('#hero-catalog-status');
   if (liveStatus) liveStatus.textContent = `${calculators.length} live formula calculators · ${FIELD_DIRECTORY.length} research fields mapped`;
-  const catalogLabel = document.querySelector('#catalog-live-label');
-  if (catalogLabel) catalogLabel.textContent = `${calculators.length} LIVE FORMULA CALCULATORS`;
   const truth = document.querySelector('#catalog-truth-text');
   if (truth) truth.textContent = `${calculators.length} formula-based calculators are currently in the live catalog. Unit converters are listed separately and are not included in this count.`;
 }
@@ -400,14 +394,7 @@ function renderFields() {
   const status = document.querySelector('#field-status');
   const toggle = document.querySelector('#toggle-fields');
   if (!grid) return;
-  const query = normalize(activeQuery);
-  const visibleFields = FIELD_DIRECTORY.filter(name => {
-    const linkedTools = fieldToolMap.get(name) || [];
-    const toolWords = linkedTools.map(definition => `${definition.title} ${definition.description} ${(definition.keywords || []).join(' ')}`).join(' ');
-    const text = normalize(`${name} ${toolWords}`);
-    return !query || matchesSearchText(text, query);
-  });
-  const shown = activeQuery || showAllFields ? visibleFields : visibleFields.filter(name => fieldHighlights.includes(name));
+  const shown = showAllFields ? FIELD_DIRECTORY : FIELD_DIRECTORY.filter(name => fieldHighlights.includes(name));
   grid.replaceChildren();
   for (const [index, name] of FIELD_DIRECTORY.entries()) {
     if (!shown.includes(name)) continue;
@@ -422,11 +409,10 @@ function renderFields() {
     card.append(copy);
     grid.append(card);
   }
-  if (status) status.textContent = activeQuery
-    ? `${visibleFields.length} research ${visibleFields.length === 1 ? 'field' : 'fields'} match this search.`
-    : showAllFields ? `Showing all ${FIELD_DIRECTORY.length} research field groups.` : 'Showing six highlighted research groups.';
+  if (status) status.textContent = showAllFields
+    ? `Showing all ${FIELD_DIRECTORY.length} research field groups.`
+    : 'Showing six highlighted research groups.';
   if (toggle) {
-    toggle.hidden = Boolean(activeQuery);
     toggle.setAttribute('aria-expanded', String(showAllFields));
     toggle.innerHTML = showAllFields ? 'Show highlights <span aria-hidden="true">↑</span>' : `View all ${FIELD_DIRECTORY.length} fields <span aria-hidden="true">↓</span>`;
   }
@@ -444,31 +430,48 @@ function showToast(message) {
 function setupSearch() {
   const input = document.querySelector('#catalog-search');
   const form = document.querySelector('#calculatorSearchForm');
-  input?.addEventListener('input', () => {
+  const updateQuery = () => {
     converterSearchUnavailable = false;
     activeQuery = input.value.trim();
     activeCategory = 'All tools';
     favoritesOnly = false;
     catalogVisibleLimit = CATALOG_PAGE_SIZE;
     renderCatalog();
-    renderFields();
+  };
+  let pendingSearch;
+  input?.addEventListener('input', event => {
+    clearTimeout(pendingSearch);
+    if (!event.isComposing) pendingSearch = setTimeout(updateQuery, 110);
   });
   form?.addEventListener('submit', event => {
     event.preventDefault();
-    document.querySelector('#explore')?.scrollIntoView({ behavior: 'smooth' });
+    clearTimeout(pendingSearch);
+    updateQuery();
+    const results = document.querySelector('#catalog-title');
+    results?.focus({ preventScroll: true });
+    results?.scrollIntoView({ block: 'start' });
   });
   input?.addEventListener('keydown', event => {
     if (event.key === 'ArrowDown') {
-      const first = document.querySelector('#unified-search-additions:not([hidden]) a') || document.querySelector('#auraCalculatorGrid .calc-card');
+      if (input.value.trim() !== activeQuery) {
+        clearTimeout(pendingSearch);
+        updateQuery();
+      }
+      const formula = document.querySelector('#auraCalculatorGrid .calc-card');
+      const converter = document.querySelector('#unified-search-additions:not([hidden]) a[href^="/converters/convert-"]');
+      const wantsConversion = /\b(?:to|into)\b/i.test(activeQuery);
+      const first = (wantsConversion && converter) || formula || document.querySelector('#unified-search-additions:not([hidden]) a');
       if (first) { event.preventDefault(); first.focus(); }
     }
-    if (event.key === 'Escape') { clearSearch(); input.focus(); }
+    if (event.key === 'Escape') {
+      clearTimeout(pendingSearch);
+      clearSearch();
+    }
   });
   document.querySelector('#clear-search')?.addEventListener('click', clearSearch);
   document.querySelector('#reset-search')?.addEventListener('click', clearSearch);
   document.querySelector('#focus-search')?.addEventListener('click', () => {
     document.querySelector('#catalog-search')?.focus();
-    document.querySelector('#explore')?.scrollIntoView({ behavior: 'smooth' });
   });
   document.querySelector('#favorites-filter')?.addEventListener('click', () => {
     favoritesOnly = !favoritesOnly;
@@ -496,7 +499,6 @@ function clearSearch() {
   const input = document.querySelector('#catalog-search');
   if (input) input.value = '';
   renderCatalog();
-  renderFields();
   input?.focus();
 }
 
