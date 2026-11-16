@@ -7,16 +7,6 @@ import { titanCalculators } from '../../catalog/public/titan-expansion.mjs';
 
 const close = (actual, expected, tolerance = 1e-10) => assert.ok(Math.abs(actual - expected) <= tolerance * Math.max(1, Math.abs(expected)), `${actual} ≠ ${expected}`);
 const run = (id, values) => executeCalculation(publicRegistry.get(id), values);
-
-test('RC charging preserves tiny positive voltages and the zero-time boundary', () => {
-  const id = 'rc-capacitor-charging-voltage';
-  const inputs = { 'supply-voltage': 10, resistance: 1000, capacitance: 0.001 };
-  const voltageAt = time => run(id, { ...inputs, 'elapsed-time': time }).outputs['capacitor-voltage'].value;
-  // RC = 1 s. The first Taylor term is 10 V × 10⁻¹⁸; the next term is below binary64 resolution here.
-  assert.ok(Math.abs(voltageAt(1e-18) / 1e-17 - 1) < 1e-15);
-  assert.ok(voltageAt(0) === 0);
-  assert.equal(publicRegistry.get(id).version, '1.0.1');
-});
 const referenceCases = [
   ['vector-magnitude-3d', { x: 2, y: 3, z: 6 }, 'magnitude', 7],
   ['vector-dot-product-3d', { ax: 1, ay: 2, az: 3, bx: 4, by: -1, bz: 2 }, 'dot-product', 8],

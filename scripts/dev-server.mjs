@@ -3,7 +3,6 @@ import { access, realpath, stat } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleLocalVision, handleVisionStatus } from './vision-service.mjs';
-import { handleLocalFeedback } from './feedback-local.mjs';
 
 const projectRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const servingBuild = process.argv[2] === 'dist';
@@ -48,11 +47,6 @@ async function chooseFile(pathname) {
 }
 
 const server = createServer(async (request, response) => {
-  if (!servingBuild && request.url === '/api/feedback' && request.method === 'POST') {
-    try { await handleLocalFeedback(request, response, resolve(projectRoot, '.local-feedback')); }
-    catch { if (!response.headersSent) response.writeHead(503, { 'Content-Type': 'application/json' }); response.end(JSON.stringify({ error: 'Feedback delivery failed. Please retry.' })); }
-    return;
-  }
   if (!servingBuild && request.url === '/api/vision/status' && request.method === 'GET') return handleVisionStatus(request, response, process.env.OPENAI_API_KEY);
   if (!servingBuild && request.url === '/api/vision/analyze' && request.method === 'POST') {
     return handleLocalVision(request, response, { apiKey: process.env.OPENAI_API_KEY, model: process.env.AURACALC_VISION_MODEL || 'gpt-4.1-mini' });

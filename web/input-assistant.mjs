@@ -72,19 +72,14 @@ function fieldGuidance(definition, field) {
 }
 
 export class InputAssistant {
-  constructor({
-    calculators,
-    loadConverters = async () => [],
-    getLocale = () => 'en-US',
-    getCurrencyCode = () => 'USD',
-  }) {
+  constructor({ calculators, converters = [], getLocale = () => 'en-US', getCurrencyCode = () => 'USD' }) {
     this.calculators = calculators;
-    this.loadConverters = loadConverters;
+    this.converters = converters;
     this.getLocale = getLocale;
     this.getCurrencyCode = getCurrencyCode;
     this.stack = [];
     this.counter = 0;
-    this.dialog = null;
+    this.dialog = this.createDialog();
   }
 
   createDialog() {
@@ -140,40 +135,23 @@ export class InputAssistant {
     screen.append(element('p', 'input-assistant-copy', guidance.body));
     screen.append(element('div', 'input-assistant-source', guidance.source));
     const tabs = element('div', 'input-assistant-tabs');
-    tabs.setAttribute('role', 'group');
+    tabs.setAttribute('role', 'tablist');
     tabs.setAttribute('aria-label', 'Choose help type');
     const calculatorsTab = element('button', 'input-assistant-tab active', 'Find a value');
     const convertersTab = element('button', 'input-assistant-tab', 'Convert a known value');
     for (const [button, selected] of [[calculatorsTab, true], [convertersTab, false]]) {
       button.type = 'button';
-      button.setAttribute('aria-pressed', String(selected));
+      button.setAttribute('role', 'tab');
+      button.setAttribute('aria-selected', String(selected));
     }
     tabs.append(calculatorsTab, convertersTab);
     const content = element('div', 'input-assistant-choice-content');
     screen.append(tabs, content);
 
-    let choiceRevision = 0;
-    const renderChoices = async mode => {
-      const revision = ++choiceRevision;
+    const renderChoices = mode => {
       const isConverter = mode === 'converter';
+      const candidates = isConverter ? this.getCompatibleConverters(destination) : this.getCompatibleTools(destination);
       content.replaceChildren();
-      let candidates;
-      if (isConverter) {
-        const status = element('p', 'input-assistant-status', 'Loading unit conversions…');
-        status.setAttribute('role', 'status');
-        content.append(status);
-        try {
-          const converters = await this.loadConverters();
-          if (revision !== choiceRevision || !screen.isConnected) return;
-          candidates = this.getCompatibleConverters(destination, converters);
-        } catch {
-          status.textContent = 'Could not load conversions. Reconnect and choose this option again.';
-          return;
-        }
-        content.replaceChildren();
-      } else {
-        candidates = this.getCompatibleTools(destination);
-      }
       content.append(element('p', 'input-assistant-copy', isConverter
         ? 'A converter changes the units of a value you already know. It cannot find an unknown quantity such as velocity. For that, choose Find a value.'
         : 'Choose a formula calculator that can produce this kind of value. For example, velocity can be calculated from distance and elapsed time. If you are missing one of those inputs, open that calculator and ask for help again.'));
@@ -215,15 +193,20 @@ export class InputAssistant {
         ? 'Conversion preserves the measured quantity. Review the source and destination units before transferring the result.'
         : 'You choose the calculator and decide when to transfer its result. Filled values stay editable. This guide uses the local catalog; it sends no values to an AI service.'));
     };
-    for (const [button, mode] of [[calculatorsTab, 'calculator'], [convertersTab, 'converter']]) {
-      button.addEventListener('click', () => {
-        for (const option of [calculatorsTab, convertersTab]) {
-          option.classList.toggle('active', option === button);
-          option.setAttribute('aria-pressed', String(option === button));
-        }
-        renderChoices(mode);
-      });
-    }
+    calculatorsTab.addEventListener('click', () => {
+      calculatorsTab.classList.add('active');
+      calculatorsTab.setAttribute('aria-selected', 'true');
+      convertersTab.classList.remove('active');
+      convertersTab.setAttribute('aria-selected', 'false');
+      renderChoices('calculator');
+    });
+    convertersTab.addEventListener('click', () => {
+      convertersTab.classList.add('active');
+      convertersTab.setAttribute('aria-selected', 'true');
+      calculatorsTab.classList.remove('active');
+      calculatorsTab.setAttribute('aria-selected', 'false');
+      renderChoices('converter');
+    });
     renderChoices('calculator');
     this.push(screen);
     screen.querySelector('.input-assistant-search')?.focus();
@@ -246,10 +229,10 @@ export class InputAssistant {
     return candidates.sort((a, b) => b.score - a.score || a.definition.title.localeCompare(b.definition.title));
   }
 
-  getCompatibleConverters(destination, converters) {
+  getCompatibleConverters(destination) {
     const targetUnit = getUnit(destination.field.canonicalUnit);
     const candidates = [];
-    for (const definition of converters) {
+    for (const definition of this.converters) {
       for (const output of definition.outputs) {
         if (!dimensionsEqual(output.dimension, destination.field.dimension)) continue;
         if (getUnit(output.canonicalUnit).temperatureKind !== targetUnit.temperatureKind) continue;
@@ -435,7 +418,6 @@ export class InputAssistant {
   }
 
   ensureOpen() {
-    this.dialog ??= this.createDialog();
     if (!this.dialog.open) this.dialog.showModal();
   }
 

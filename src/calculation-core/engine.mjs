@@ -63,13 +63,7 @@ export function executeCalculation(definition, rawInputs, options = {}) {
       throw new CalculationError('UNIT_NOT_ACCEPTED', `The selected unit is not accepted for ${field.label || field.id}.`, { fieldId: field.id, unitId });
     }
 
-    let value;
-    try {
-      value = parseLocalizedNumber(rawValue, locale, { allowMagnitudeWords: field.allowMagnitudeWords === true });
-    } catch (error) {
-      if (!(error instanceof CalculationError)) throw error;
-      throw new CalculationError(error.code, `${field.label || field.id}: ${error.message}`, { ...error.details, fieldId: field.id });
-    }
+    const value = parseLocalizedNumber(rawValue, locale, { allowMagnitudeWords: field.allowMagnitudeWords === true });
     assertSameFieldDimension(field, unitId);
     if (getUnit(unitId).temperatureKind === 'absolute' && convertValue(value, unitId, 'K') < 0) {
       throw new CalculationError('INPUT_BELOW_ABSOLUTE_ZERO', `${field.label || field.id} cannot be below absolute zero.`, { fieldId: field.id });
