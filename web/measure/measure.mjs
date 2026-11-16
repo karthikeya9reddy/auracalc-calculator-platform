@@ -1,5 +1,5 @@
 import { pixelDistance, scaleFromReference, scaledArea, scaledDistance, angleAt } from '../measurement-core.mjs';
-import { listPublicCalculators } from '../../catalog/public/formulas.mjs';
+import { listPublicCalculators } from '../../catalog/public/index.mjs';
 import { convertValue, dimensionsEqual, getUnit } from '../../src/calculation-core/index.mjs';
 import { deviceSpeed } from './speed-core.mjs';
 import { setupAR } from './ar.mjs';

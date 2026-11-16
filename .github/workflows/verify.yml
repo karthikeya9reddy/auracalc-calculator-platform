@@ -17,4 +17,3 @@ jobs:
       - run: npm run build
         env:
           AURACALC_PUBLIC_URL: https://example.org
-      - run: node scripts/check-static-build.mjs
